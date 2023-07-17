@@ -236,13 +236,27 @@ def joinIntervals(intervals, music_gap=0, interval_gap=0, repeat=0, randomize=Fa
     intervalsSegments = intervalsSegments.overlay(
         music, gain_during_overlay=voice_vol, loop=music_loop)
 
-    playTest(intervalsSegments)
+    # TODO: make list of captions
+    list_of_caption = ''
+    return intervalsSegments, list_of_caption
 
-    # return AudioSegment, list_of_caption
+
+def saveMp3(audiosegment, path=''):
+    if not path:
+        path = os.getcwd() + '/list.mp3'
+
+    audiosegment.export(path, format='mp3')
+
+    print(f"Compilation saved succesfuly in {path}")
 
 
 intervalA = makeInterval(5, [0, 1], chanel_gap=1)
 intervalB = makeInterval(5, [2, 3], chanel_gap=1)
 
-joinIntervals([intervalA, intervalB], interval_gap=2,
-              repeat=5, randomize=True, music_gap=5, music_repeat=1, music_vol=-5, voice_vol=5)
+res, cap = joinIntervals([intervalA, intervalB], interval_gap=2,
+                         repeat=5, randomize=True, music_gap=5, music_repeat=1, music_vol=-5, voice_vol=5)
+
+
+# playTest(res)
+
+saveMp3(res, "./media/compilationA.mp3")

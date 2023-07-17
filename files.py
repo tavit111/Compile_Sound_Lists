@@ -28,7 +28,7 @@ def extractMusicPath(dirs, music_path):
         music_dir_name = os.path.split(music_path)[1]
         index = dir_names.index(music_dir_name)
         del dirs[index]
-        return dirs, music_path
+        return dirs, Path(music_path)
 
     index = -1
     music = ''
@@ -37,7 +37,7 @@ def extractMusicPath(dirs, music_path):
             index = i
 
     if index > -1:
-        music = dirs[index]
+        music = Path(dirs[index])
         del dirs[index]
 
     return dirs, music
@@ -85,7 +85,12 @@ def get_missing_contunity_of_numbered_files(files):
     for file in files:
         file_name = os.path.basename(file)
         name = os.path.splitext(file_name)[0]
-        extracted_number = re.findall(r"\d+", name)[0]
+        extracted_numbers_from_files = re.findall(r"\d+", name)
+
+        if not len(extracted_numbers_from_files):
+            continue
+
+        extracted_number = extracted_numbers_from_files[0]
         extracted_numbers.append(int(extracted_number))
 
     try:
@@ -136,7 +141,7 @@ def zip_path_transcript(paths, transcripts, missingAudioIndices=[]):
         diff = len(transcripts) - len(paths)
         paths = paths + list(repeat('', diff))
 
-    return zip(paths, transcripts)
+    return [(path, transcript) for path, transcript in zip(paths, transcripts)]
 
 
 def get_script_dir(root):
