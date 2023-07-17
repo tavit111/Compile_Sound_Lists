@@ -1,7 +1,10 @@
 import os
 from pydub import AudioSegment
+from pydub.playback import play
 from files import list_directories, extractMusicPath, list_mp3s, extract_transcript, zip_path_transcript, get_missing_contunity_of_numbered_files, get_script_dir
-
+import numpy as np
+import random
+import math
 
 #######   HOW TO    ######
 # 1. In root folder all the channels and music folder will be detected automaticy
@@ -19,6 +22,17 @@ from files import list_directories, extractMusicPath, list_mp3s, extract_transcr
 # 13. If there are missing audtio then the TTS engine will creat it into audio
 # TODO: csv files
 
+
+# HELPER'S FUNCTIONS
+
+def showChanels(chanels):
+    for chanel in chanels:
+        print("[")
+        for file in chanel:
+            print(file)
+        print("]")
+
+
 # STATE
 # channel_paths = [(path1, script), (path2, script), (path3, cscript)]
 chanels = []
@@ -26,7 +40,7 @@ chanels = []
 #     {id: 0, speed: 1, gain: 0}
 # ]
 # music_paths_settings = [(path, gain, speed), (path, gain, speed)]
-background_musci = []
+music_files = []
 
 # SETTING JSON FILE INPUT AND OUTPUT
 # channels: [folder_name, gain, sepeed], [folder_name, gain, sepeed]
@@ -59,22 +73,42 @@ def detectChanels(root_path, music_path='', setting_file=''):
 
     # set the state of the music
 
-    dir_paths = list_directories(root_path)
-    chanel_paths, music_path = extractMusicPath(dir_paths, music_path)
+    def read_chanels_from_files(root_path, music_path):
 
-    for chanel_path in chanel_paths:
-        trasnscription_dir_path = get_script_dir(chanel_path)
-        print("trasnscription_dir_path", trasnscription_dir_path)
-        mp3_paths = list_mp3s(chanel_path)
-        transcripts = extract_transcript(trasnscription_dir_path)
+        dir_paths = list_directories(root_path)
+        chanel_paths, music_path = extractMusicPath(dir_paths, music_path)
 
-        missing_audio_indices = get_missing_contunity_of_numbered_files(
-            mp3_paths)
+        for chanel_path in chanel_paths:
+            trasnscription_dir_path = get_script_dir(chanel_path)
+            mp3_paths = list_mp3s(chanel_path)
+            transcripts = extract_transcript(trasnscription_dir_path)
 
-        zipped = zip_path_transcript(
-            mp3_paths, transcripts, missing_audio_indices)
+            missing_audio_indices = get_missing_contunity_of_numbered_files(
+                mp3_paths)
 
-        chanels.append(zipped)
+            zipped = zip_path_transcript(
+                mp3_paths, transcripts, missing_audio_indices)
+
+            chanels.append(zipped)
+
+        music_paths = list_mp3s(music_path)
+
+        for path in music_paths:
+            music_files.append(path)
+
+    # list_csv(root, music_path)
+        # if there is one csv split it to channels
+        # if more ten one use arleady splited
+        # return csv_chanels
+    # read_channels_from_csv(csv_chanels)
+    # TODO: Test  diffrent functions
+    # TODO: Test if ther is not enotuth in one
+    read_chanels_from_files(root_path, music_path)
+    # chanels = [[word for word in chanel] for chanel in chanels]
+    # we will swap axes in make interval
+    # swapped = np.swapaxes(chanels, 0, 1)
+    # print(chanels)
+    # showChanels(rotated)
 
 
 detectChanels(
@@ -92,42 +126,123 @@ def setChanels(setting_file=''):
     pass
 
 
-def playTest():
-    pass
-    # play audio from state for testing
-    # play audio from make intervals
-    # play audio from join intervals
+def playTest(segment):
+    play(segment)
 
 
-def makeInterval(word_count, use_channels, repeat_channel=1, repeat_word=1, randomize_channels=False, randomize_words=False, chanel_gap=2, word_gap=0, word_speed=1):
+def assigne_all_channels():
+    count = len(chanels)
+    return [n for n in range(0, count)]
+
+
+def makeInterval(word_count=0, use_channels=assigne_all_channels(), repeat_chanel=0, no_repeat_first_ch=False, repeat_word=0, randomize_channels=False, randomize_words=False, chanel_gap=2, word_gap=0, word_speed=1):
+    if max(use_channels) > len(chanels) - 1:
+        raise IndexError("use_channels out of range.")
+
+    max_count = min([len(chanels[index]) for index in use_channels])
+    if word_count > max_count:
+        raise IndexError(
+            f"One of the chanels has maximum items of {max_count} and you requested {word_count}")
+
+    if not word_count:
+        word_count = max_count
+
+    chanel_chunks = np.array([chanels[i][:word_count] for i in use_channels])
+
+    interval = chanel_chunks.swapaxes(0, 1)
+
+    if repeat_chanel:
+        interval = interval.repeat(repeat_chanel+1, 1)
+        if no_repeat_first_ch:
+            interval = np.delete(interval, range(repeat_chanel), 1)
+
+    if repeat_word:
+        interval = interval.repeat(repeat_word+1, 0)
+
+    if randomize_channels:
+        [np.random.shuffle(interval[i]) for i in range(word_count)]
+
+    if randomize_words:
+        np.random.shuffle(interval)
+
+    # print(interval)
+
+    channel_silence = AudioSegment.silent(duration=chanel_gap * 1000)
+    word_silence = AudioSegment.silent(duration=word_gap * 1000)
+
+    intervalSegment = AudioSegment.empty()
+    for word in interval:
+        wordSegment = AudioSegment.empty()
+
+        for chanel in word:
+            if not chanel[0]:
+                continue
+
+            chanelSegmet = AudioSegment.from_mp3(chanel[0])
+            wordSegment = wordSegment + chanelSegmet
+            wordSegment = wordSegment + channel_silence
+
+        intervalSegment = intervalSegment + wordSegment
+        intervalSegment = intervalSegment + word_silence
+
+    return (intervalSegment, '')
+
     # params:
     #
     #         word_count - number of words for interval
     #         use_channels - display channesl in certin order, or ommit the one not listed [0,1,2,3] | [2,1,3,0] | [0,2,3]
     #         randomize_channel - for every word the order of channel is diffrent. If the channel is ommited in show_channels it wil be ommited
     #         randomize_words - show wods in random order
-    pass
+
     # return AudioSegment, list of captions
 
 
-def joinIntervals(intervals, music_gap=0, repeat=1, randomize=False):
+def joinIntervals(intervals, music_gap=0, interval_gap=0, repeat=0, randomize=False, music_loop=True, music_repeat=0, music_vol=0, voice_vol=0, end_padding=0):
     # interval is tuple (AudioSegment, list_of_caption)
 
-    # join the intervals toghether,
-    # join the captions together
-    # add backgroud musci
-    pass
+    #   VOCABS
+    if repeat:
+        repeated = []
+        for interval in intervals:
+            for i in range(repeat+1):
+                repeated.append(interval)
+
+        intervals = repeated
+
+    if randomize:
+        random.shuffle(intervals)
+
+    intervalsSegments = AudioSegment.empty()
+    intervalSilence = AudioSegment.silent(duration=interval_gap*1000)
+    for interval in intervals:
+        intervalsSegments = intervalsSegments + interval[0]
+        intervalsSegments = intervalsSegments + intervalSilence
+
+    intervalsSegments = intervalsSegments + \
+        AudioSegment.silent(duration=end_padding*1000)
+
+    #   MUISC
+
+    music = AudioSegment.empty()
+    music_silence = AudioSegment.silent(duration=music_gap*1000)
+    for path in music_files:
+        song = AudioSegment.from_mp3(path)
+        for i in range(music_repeat+1):
+            music = music + song
+            music = music + music_vol
+        music = music + music_silence
+
+    # JOIN
+    intervalsSegments = intervalsSegments.overlay(
+        music, gain_during_overlay=voice_vol, loop=music_loop)
+
+    playTest(intervalsSegments)
+
     # return AudioSegment, list_of_caption
 
 
-# HELPER'S FUNCTIONS
+intervalA = makeInterval(5, [0, 1], chanel_gap=1)
+intervalB = makeInterval(5, [2, 3], chanel_gap=1)
 
-def showChanels():
-    for chanel in chanels:
-        print("[")
-        for file in chanel:
-            print(file)
-        print("]")
-
-
-showChanels()
+joinIntervals([intervalA, intervalB], interval_gap=2,
+              repeat=5, randomize=True, music_gap=5, music_repeat=1, music_vol=-5, voice_vol=5)
