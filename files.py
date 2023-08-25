@@ -2,6 +2,11 @@ import os
 import re
 from pathlib import Path
 from itertools import repeat
+import csv
+
+dialect = csv.unix_dialect()
+dialect.delimiter = "\t"
+dialect.quotechar = '"'
 
 
 def natural_sort(strings):
@@ -22,14 +27,7 @@ def list_directories(root):
     return [Path(root, folder) for folder in sorted]
 
 
-def extractMusicPath(dirs, music_path):
-    if music_path:
-        dir_names = [dir.name for dir in dirs]
-        music_dir_name = os.path.split(music_path)[1]
-        index = dir_names.index(music_dir_name)
-        del dirs[index]
-        return dirs, Path(music_path)
-
+def extractMusicPath(dirs):
     index = -1
     music = ''
     for i, path in enumerate(dirs):
@@ -59,7 +57,10 @@ def is_text_file(file_path):
 
 def list_mp3s(directory_path):
     # return all the mp3 paths, sorted in natural order
-    files = os.listdir(directory_path.absolute())
+    if not directory_path:
+        return []
+
+    files = os.listdir(directory_path)
     filtered_files = [file for file in files if is_mp3_file(file)]
     sorted_files = natural_sort(filtered_files)
     file_paths = [os.path.join(directory_path, file) for file in sorted_files]
@@ -141,7 +142,7 @@ def zip_path_transcript(paths, transcripts, missingAudioIndices=[]):
         diff = len(transcripts) - len(paths)
         paths = paths + list(repeat('', diff))
 
-    return [(path, transcript) for path, transcript in zip(paths, transcripts)]
+    return [[path, transcript] for path, transcript in zip(paths, transcripts)]
 
 
 def get_script_dir(root):
@@ -153,6 +154,20 @@ def get_script_dir(root):
     text_folder = Path(root, text_folders[0]) if text_folders else ''
 
     return text_folder or root
+
+
+def readCSV(path, headers=True):
+    data = []
+    with open(path, newline='') as csv_file:
+        reader = csv.reader(csv_file, dialect=dialect)
+
+        for row in reader:
+            data.append(row)
+
+        if headers:
+            data = data[1:]
+
+    return data
 
 
 if __name__ == "__main__":
