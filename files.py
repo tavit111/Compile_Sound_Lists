@@ -5,8 +5,8 @@ from itertools import repeat
 import csv
 
 dialect = csv.unix_dialect()
-dialect.delimiter = "\t"
-dialect.quotechar = '"'
+dialect.delimiter = ","
+dialect.quotechar = "'"
 
 
 def natural_sort(strings):

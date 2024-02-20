@@ -126,6 +126,7 @@ def playTest(segment):
 
 
 def makeInterval(word_count=0, use_channels=[], repeat_chanel=0, no_repeat_first_ch=False, repeat_word=0, randomize_channels=False, randomize_words=False, chanel_gap=2, word_gap=0, word_speed=1):
+
     if not use_channels:
         use_channels = State.get_chanels_indexis()
 
@@ -135,7 +136,10 @@ def makeInterval(word_count=0, use_channels=[], repeat_chanel=0, no_repeat_first
     if not word_count:
         word_count = len(State.chanels)
 
-    interval = State.chanels[:word_count]
+    interval = np.array(State.chanels[:word_count])
+
+    # filter channels
+    interval = interval[:, use_channels]
 
     if repeat_chanel:
         interval = interval.repeat(repeat_chanel+1, 1)
@@ -145,6 +149,7 @@ def makeInterval(word_count=0, use_channels=[], repeat_chanel=0, no_repeat_first
     if repeat_word:
         interval = interval.repeat(repeat_word+1, 0)
 
+    # BUG: we need random in groups (when reped channel) and that include the were the first word is not repete
     if randomize_channels:
         [np.random.shuffle(interval[i]) for i in range(word_count)]
 
@@ -155,6 +160,8 @@ def makeInterval(word_count=0, use_channels=[], repeat_chanel=0, no_repeat_first
     word_silence = AudioSegment.silent(duration=word_gap * 1000)
 
     intervalSegment = AudioSegment.empty()
+    print(interval)
+
     for word in interval:
         wordSegment = AudioSegment.empty()
 
@@ -172,7 +179,7 @@ def makeInterval(word_count=0, use_channels=[], repeat_chanel=0, no_repeat_first
     return (intervalSegment, '')
 
 
-def joinIntervals(intervals, music_gap=0, interval_gap=0, repeat=0, randomize=False, music_loop=True, music_repeat=0, music_vol=0, voice_vol=0, end_padding=0):
+def joinIntervals(intervals, music_gap=0, interval_gap=0, repeat=0, randomize=False, music_mute=False, music_loop=True, music_repeat=0, music_vol=0, voice_vol=0, end_padding=0):
     # interval is tuple (AudioSegment, list_of_caption)
 
     #   VOCABS
@@ -197,6 +204,8 @@ def joinIntervals(intervals, music_gap=0, interval_gap=0, repeat=0, randomize=Fa
         AudioSegment.silent(duration=end_padding*1000)
 
     #   MUISC
+    if music_mute:
+        State.music_files = []
 
     music = AudioSegment.empty()
     music_silence = AudioSegment.silent(duration=music_gap*1000)
@@ -208,8 +217,9 @@ def joinIntervals(intervals, music_gap=0, interval_gap=0, repeat=0, randomize=Fa
         music = music + music_silence
 
     # JOIN
-    intervalsSegments = intervalsSegments.overlay(
-        music, gain_during_overlay=voice_vol, loop=music_loop)
+    if State.music_files:
+        intervalsSegments = intervalsSegments.overlay(
+            music, gain_during_overlay=voice_vol, loop=music_loop)
 
     # TODO: make list of captions
     list_of_caption = ''
