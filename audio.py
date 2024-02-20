@@ -166,10 +166,10 @@ def makeInterval(word_count=0, use_channels=[], repeat_chanel=0, no_repeat_first
         wordSegment = AudioSegment.empty()
 
         for chanel in word:
-            if not chanel[0]:
+            if not chanel[1]:
                 continue
 
-            chanelSegmet = AudioSegment.from_mp3(chanel[0])
+            chanelSegmet = AudioSegment.from_mp3(chanel[1])
             wordSegment = wordSegment + chanelSegmet
             wordSegment = wordSegment + channel_silence
 

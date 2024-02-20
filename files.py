@@ -142,7 +142,7 @@ def zip_path_transcript(paths, transcripts, missingAudioIndices=[]):
         diff = len(transcripts) - len(paths)
         paths = paths + list(repeat('', diff))
 
-    return [[path, transcript] for path, transcript in zip(paths, transcripts)]
+    return [[transcript, path] for path, transcript in zip(paths, transcripts)]
 
 
 def get_script_dir(root):
