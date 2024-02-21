@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 from itertools import repeat
 import csv
+import pandas as pd
 
 dialect = csv.unix_dialect()
 dialect.delimiter = ","
@@ -156,21 +157,17 @@ def get_script_dir(root):
     return text_folder or root
 
 
-def readCSV(path, headers=True):
-    data = []
-    with open(path, newline='') as csv_file:
-        reader = csv.reader(csv_file, dialect=dialect)
+def readCSV(path, headers=False):
+    delimiter = ","
+    quotechar = "'"
 
-        for row in reader:
-            data.append(row)
+    header = 0 if headers else None
 
-        if headers:
-            data = data[1:]
+    df = pd.read_csv(path, dtype=str, keep_default_na=False,
+                     header=header, quotechar=quotechar, delimiter=delimiter)
 
-    return data
+    return df.to_numpy()
 
 
 if __name__ == "__main__":
-    res = get_script_dir(
-        "/home/tavit/Code/Compile_Sound_Lists/media/3 - Freanch")
-    print(res)
+    readCSV("/home/tavit/Code/Compile_Sound_Lists/media/fiszki-root/transcript.csv")

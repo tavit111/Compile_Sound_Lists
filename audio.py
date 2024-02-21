@@ -17,6 +17,7 @@ class State:
 
     def __init__(self, root='', music_dir='', csv_file='', setting_file=''):
         self.__root_path = root
+        State.root_path = root
         self.__music_dir = music_dir
         self.__csv_file = csv_file
         self.__setting_file = setting_file
@@ -30,11 +31,9 @@ class State:
     def __read_chanels_from_csv(self):
         data = readCSV(self.__csv_file,  False)
 
-        columns_count = len(data[0])
-        if columns_count % 2 != 0:
-            data = [[*row, ''] for row in data]
-
         chanel_count = int(len(data[0])/2)
+
+        # TODO: make data array such that demention have equel amout of fields
         data = np.reshape(data, (-1, chanel_count, 2)).tolist()
 
         State.chanels = data
@@ -169,7 +168,9 @@ def makeInterval(word_count=0, use_channels=[], repeat_chanel=0, no_repeat_first
             if not chanel[1]:
                 continue
 
-            chanelSegmet = AudioSegment.from_mp3(chanel[1])
+            file_path = os.path.join(State.root_path, chanel[1])
+
+            chanelSegmet = AudioSegment.from_mp3(file_path)
             wordSegment = wordSegment + chanelSegmet
             wordSegment = wordSegment + channel_silence
 
