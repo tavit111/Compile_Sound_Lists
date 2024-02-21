@@ -9,7 +9,6 @@ import math
 
 # HELPER'S FUNCTIONS
 
-# TODO: 1. move the sorting functionaltis to the State and make them seprete functions
 # TODO: 2. make thos functions returning the class itself
 # TODO: 3 move the create interval into the State class
 # TODO: 4. make the channel table 3d
@@ -78,7 +77,8 @@ class Table:
         if max(channels) > len(self.__table[0]) - 1:
             raise IndexError("channels out of range.")
 
-        return self.__table[:, channels]
+        table = self.__table[:, channels]
+        return type(self)(table, self.__root)
 
 
 class Playlist:
