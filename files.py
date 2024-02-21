@@ -64,7 +64,8 @@ def list_mp3s(directory_path):
     files = os.listdir(directory_path)
     filtered_files = [file for file in files if is_mp3_file(file)]
     sorted_files = natural_sort(filtered_files)
-    file_paths = [os.path.join(directory_path, file) for file in sorted_files]
+    basename = os.path.basename(directory_path)
+    file_paths = [os.path.join(basename, file) for file in sorted_files]
 
     return file_paths
 

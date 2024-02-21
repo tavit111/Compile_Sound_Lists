@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import os
 from pydub import AudioSegment
 from pydub.playback import play
@@ -8,35 +9,32 @@ import math
 
 # HELPER'S FUNCTIONS
 
+# TODO: 1. move the sorting functionaltis to the State and make them seprete functions
+# TODO: 2. make thos functions returning the class itself
+# TODO: 3 move the create interval into the State class
+# TODO: 4. make the channel table 3d
+# TODO: 5. make grouping channels functionality
+# TODO: 6. make the seperate stats join together to create state with multiple channels
 
 # STATE
 # channel_paths = [(path1, script), (path2, script), (path3, script)]
+
+
 class State:
     chanels = []
     music_files = []
 
-    def __init__(self, root='', music_dir='', csv_file='', setting_file=''):
-        self.__root_path = root
+    def __init__(self, root, csv):
         State.root_path = root
-        self.__music_dir = music_dir
-        self.__csv_file = csv_file
-        self.__setting_file = setting_file
-        self.__detectChanels()
+        self.__root_path = root
+        self.__music_dir = ''
+        self.__read_music()
+        self.setting_file = ''
 
     @staticmethod
     def get_chanels_indexis():
         count = len(State.chanels[0])
         return [n for n in range(0, count)]
-
-    def __read_chanels_from_csv(self):
-        data = readCSV(self.__csv_file,  False)
-
-        chanel_count = int(len(data[0])/2)
-
-        # TODO: make data array such that demention have equel amout of fields
-        data = np.reshape(data, (-1, chanel_count, 2)).tolist()
-
-        State.chanels = data
 
     def __read_music(self):
         if not self.__music_dir and not self.__root_path:
@@ -55,11 +53,57 @@ class State:
         for path in music_paths:
             State.music_files.append(path)
 
-    def __read_chanels_from_files(self):
-        if not os.path.isdir(self.__root_path):
+
+@dataclass
+class Table:
+
+    __table: np.ndarray
+    __root: str
+
+    def get_chanels_indexis(self):
+        count = len(self.__table[0])
+        return [n for n in range(0, count)]
+
+    def show(self):
+        for chanel in self.__table:
+            print("[")
+            for file in chanel:
+                print("\t", file)
+            print("]")
+
+    def filter(self, channels=[]):
+        if not channels:
+            channels = self.get_chanels_indexis()
+
+        if max(channels) > len(self.__table[0]) - 1:
+            raise IndexError("channels out of range.")
+
+        return self.__table[:, channels]
+
+
+class Playlist:
+    @classmethod
+    def creatTable(cls, root_path='', csv_file=''):
+        if csv_file:
+            return cls.__read_chanels_from_csv(csv_file, root_path)
+        elif root_path:
+            return cls.__read_chanels_from_files(root_path)
+
+    @classmethod
+    def __read_chanels_from_csv(cls, csv_file, root_path):
+        data = readCSV(csv_file,  False)
+
+        chanel_count = int(len(data[0])/2)
+        data = np.reshape(data, (-1, chanel_count, 2))
+
+        return Table(data, root_path)
+
+    @classmethod
+    def __read_chanels_from_files(cls, root_path):
+        if not os.path.isdir(root_path):
             raise FileNotFoundError("Root directory dose not exist")
 
-        dir_paths = list_directories(self.__root_path)
+        dir_paths = list_directories(root_path)
         chanel_paths, music_path = extractMusicPath(
             dir_paths)
 
@@ -82,63 +126,21 @@ class State:
             if len(chanel) < max_chanel_length:
                 diff = max_chanel_length - len(chanel)
                 chanel.extend([['', ''] for i in range(diff)])
-        swaped_chanels = np.swapaxes(chanels, 0, 1).tolist()
-        State.chanels = swaped_chanels
+        swaped_chanels = np.swapaxes(chanels, 0, 1)
 
-    def __detectChanels(self):
-        if self.__csv_file:
-            self.__read_chanels_from_csv()
-        elif self.__root_path:
-            self.__read_chanels_from_files()
-        self.__read_music()
-
-    def showChanels(self):
-        print("CHANELS")
-        for chanel in State.chanels:
-            print("[")
-            for file in chanel:
-                print("\t", file)
-            print("]")
-
-        print()
-        print("MUSIC")
-        for music_path in State.music_files:
-            print("\t", music_path)
-
-
-# showChanels()
-
-
-def setChanels(setting_file=''):
-    # if there is a setting file then don't do any setting twicking
-    # set each channel for speed and gains
-    # set the backgroudn music for speed and gains
-    # playback everithing to test it:
-    #   - play all channels against the each backgroud music
-    #   - insceas and secres settings for each channel and musci
-    # update the state
-    pass
+        return Table(swaped_chanels, root_path)
 
 
 def playTest(segment):
     play(segment)
 
 
-def makeInterval(word_count=0, use_channels=[], repeat_chanel=0, no_repeat_first_ch=False, repeat_word=0, randomize_channels=False, randomize_words=False, chanel_gap=2, word_gap=0, word_speed=1):
-
-    if not use_channels:
-        use_channels = State.get_chanels_indexis()
-
-    if max(use_channels) > len(State.chanels[0]) - 1:
-        raise IndexError("use_channels out of range.")
+def makeInterval(word_count=0, repeat_chanel=0, no_repeat_first_ch=False, repeat_word=0, randomize_channels=False, randomize_words=False, chanel_gap=2, word_gap=0, word_speed=1):
 
     if not word_count:
         word_count = len(State.chanels)
 
-    interval = np.array(State.chanels[:word_count])
-
-    # filter channels
-    interval = interval[:, use_channels]
+    # interval = np.array(State.chanels[:word_count])
 
     if repeat_chanel:
         interval = interval.repeat(repeat_chanel+1, 1)
@@ -159,7 +161,6 @@ def makeInterval(word_count=0, use_channels=[], repeat_chanel=0, no_repeat_first
     word_silence = AudioSegment.silent(duration=word_gap * 1000)
 
     intervalSegment = AudioSegment.empty()
-    print(interval)
 
     for word in interval:
         wordSegment = AudioSegment.empty()
