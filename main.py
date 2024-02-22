@@ -13,7 +13,7 @@ table1 = Playlist.creatTable(
     root_path='/home/tavit/Code/Compile_Sound_Lists/media/',
     csv_file="/home/tavit/Code/Compile_Sound_Lists/media/input.csv"
 )
-firstChanel = table1.filter([0])
+firstChanel = table1.slice()
 firstChanel.show()
 
 

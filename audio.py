@@ -9,7 +9,6 @@ import math
 
 # HELPER'S FUNCTIONS
 
-# TODO: 2. make thos functions returning the class itself
 # TODO: 3 move the create interval into the State class
 # TODO: 4. make the channel table 3d
 # TODO: 5. make grouping channels functionality
@@ -80,6 +79,34 @@ class Table:
         table = self.__table[:, channels]
         return type(self)(table, self.__root)
 
+    def repeatChanels(self, repeat=0, no_repeat_first_ch=True):
+        interval = self.__table.repeat(repeat+1, 1)
+        if no_repeat_first_ch:
+            interval = np.delete(interval, range(repeat), 1)
+
+        return type(self)(interval, self.__root)
+
+    def repeatWord(self, repeat=0):
+        interval = self.__table.repeat(repeat+1, 0)
+
+        return type(self)(interval, self.__root)
+
+    def randomizeChannels(self):
+        interval = self.__table
+        word_count = len(self.__table)
+        [np.random.shuffle(interval[i]) for i in range(word_count)]
+
+        return type(self)(interval, self.__root)
+
+    def randomizeWords(self):
+        interval = self.__table
+        np.random.shuffle(interval)
+
+        return type(self)(interval, self.__root)
+
+    def slice(self, start=0, end=-1):
+        return type(self)(self.__table[start:end], self.__root)
+
 
 class Playlist:
     @classmethod
@@ -135,27 +162,11 @@ def playTest(segment):
     play(segment)
 
 
-def makeInterval(word_count=0, repeat_chanel=0, no_repeat_first_ch=False, repeat_word=0, randomize_channels=False, randomize_words=False, chanel_gap=2, word_gap=0, word_speed=1):
-
-    if not word_count:
-        word_count = len(State.chanels)
+def makeInterval(chanel_gap=2, word_gap=0, word_speed=1):
 
     # interval = np.array(State.chanels[:word_count])
 
-    if repeat_chanel:
-        interval = interval.repeat(repeat_chanel+1, 1)
-        if no_repeat_first_ch:
-            interval = np.delete(interval, range(repeat_chanel), 1)
-
-    if repeat_word:
-        interval = interval.repeat(repeat_word+1, 0)
-
     # BUG: we need random in groups (when reped channel) and that include the were the first word is not repete
-    if randomize_channels:
-        [np.random.shuffle(interval[i]) for i in range(word_count)]
-
-    if randomize_words:
-        np.random.shuffle(interval)
 
     channel_silence = AudioSegment.silent(duration=chanel_gap * 1000)
     word_silence = AudioSegment.silent(duration=word_gap * 1000)
