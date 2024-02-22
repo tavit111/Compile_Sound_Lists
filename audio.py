@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 import os
 from pydub import AudioSegment
 from pydub.playback import play
-from files import list_directories, extractMusicPath, list_mp3s, extract_transcript, zip_path_transcript, get_missing_contunity_of_numbered_files, get_script_dir, readCSV
+from files import list_directories, extractMusicPath, list_mp3s, is_mp3_file, extract_transcript, zip_path_transcript, get_missing_contunity_of_numbered_files, get_script_dir, readCSV
 import numpy as np
 import random
 import math
@@ -239,22 +239,27 @@ class Audio:
         music = AudioSegment.empty()
         music_silence = AudioSegment.silent(duration=self.__music_gap*1000)
         for path in self.__music_files:
-            song = AudioSegment.from_mp3(path)
-            for i in range(music_repeat+1):
-                music = music + song
-                music = music + music_vol
+            music = AudioSegment.from_mp3(path)
+            # for i in range(music_repeat+1):
+            #     music = music + song
             music = music + music_silence
         music = music.apply_gain(self.__music_vol)
 
         # JOIN VOCABS & MUSIC
         if self.__music_files:
             intervalsSegments = intervalsSegments.overlay(
-                music, gain_during_overlay=voice_vol, loop=music_loop)
+                music, loop=self.__music_loop)
 
         # TODO: make list of captions
         list_of_caption = ''
         # return intervalsSegments, list_of_caption
         return intervalsSegments
+
+    def addMusic(self, path):
+        if not is_mp3_file(path):
+            raise Exception("Not an mp3 file. addMusic require mp3 file path")
+
+        self.__music_files.append(path)
 
     def play(self, limit=-1):
         limit = limit*1000 if limit > -1 else -1

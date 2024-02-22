@@ -14,10 +14,13 @@ table1 = Playlist.creatTable(
     csv_file="/home/tavit/Code/Compile_Sound_Lists/media/input.csv"
 )
 
+music_path1 = "/home/tavit/Code/Compile_Sound_Lists/media/empty/1 - mgs2_alert_detected.mp3"
+music_path2 = "/home/tavit/Code/Compile_Sound_Lists/media/empty/2 - mgs3_cqc_them.mp3"
+
 chunkAudio = table1.makeInterval()
 audio = Audio([chunkAudio])
-audio.increasVoiceVolume(10)
-audio.saveMp3()
+audio.addMusic(music_path2)
+audio.play(5)
 
 # fiszki = makeInterval(
 #     5, [1, 0, 3, 2, 5, 4], chanel_gap=1, repeat_chanel=0, repeat_word=0, no_repeat_first_ch=False, randomize_channels=False)
