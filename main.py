@@ -14,9 +14,9 @@ table1 = Playlist.creatTable(
     csv_file="/home/tavit/Code/Compile_Sound_Lists/media/input.csv"
 )
 
-table1.show()
 chunkAudio = table1.makeInterval()
 audio = Audio([chunkAudio])
+audio.increasVoiceVolume(10)
 audio.saveMp3()
 
 # fiszki = makeInterval(

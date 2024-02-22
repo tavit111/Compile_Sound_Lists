@@ -185,9 +185,27 @@ class Audio:
     __interval_gap: int = 2
     __music_gap: int = 0
     __music_loop: bool = True
-    __music_vol: int = 1
-    __voice_vol: int = 1
     __end_padding: int = 0
+    __voice_vol: int = 0
+    __music_vol: int = 0
+
+    def setIntervalGap(self, gap):
+        self.__interval_gap = gap
+
+    def setMusicGap(self, gap):
+        self.__music_gap = gap
+
+    def setMusicLoop(slef, isLooping):
+        self.__music_loop = isLooping
+
+    def addEndPad(self, duration):
+        self.__end_padding = duration
+
+    def increasVoiceVolume(self, vol):
+        self.__voice_vol = vol
+
+    def increasMusicVolume(self, vol):
+        self.__music_vol = vol
 
     def __compile(self, repeat=0, randomize=False):
         # interval is tuple (AudioSegment, list_of_caption)
@@ -211,6 +229,7 @@ class Audio:
             duration=self.__interval_gap*1000)
         for interval in intervals:
             intervalsSegments = intervalsSegments + interval[0]
+            intervalsSegments = intervalsSegments.apply_gain(self.__voice_vol)
             intervalsSegments = intervalsSegments + intervalSilence
 
         intervalsSegments = intervalsSegments + \
@@ -225,6 +244,7 @@ class Audio:
                 music = music + song
                 music = music + music_vol
             music = music + music_silence
+        music = music.apply_gain(self.__music_vol)
 
         # JOIN VOCABS & MUSIC
         if self.__music_files:
