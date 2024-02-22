@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from pydub import AudioSegment
 from pydub.playback import play
@@ -9,7 +9,6 @@ import math
 
 # HELPER'S FUNCTIONS
 
-# TODO: 3 move the create interval into the State class
 # TODO: 4. make the channel table 3d
 # TODO: 5. make grouping channels functionality
 # TODO: 6. make the seperate stats join together to create state with multiple channels
@@ -50,62 +49,6 @@ class State:
 
         for path in music_paths:
             State.music_files.append(path)
-
-
-@dataclass
-class Table:
-
-    __table: np.ndarray
-    __root: str
-
-    def get_chanels_indexis(self):
-        count = len(self.__table[0])
-        return [n for n in range(0, count)]
-
-    def show(self):
-        for chanel in self.__table:
-            print("[")
-            for file in chanel:
-                print("\t", file)
-            print("]")
-
-    def filter(self, channels=[]):
-        if not channels:
-            channels = self.get_chanels_indexis()
-
-        if max(channels) > len(self.__table[0]) - 1:
-            raise IndexError("channels out of range.")
-
-        table = self.__table[:, channels]
-        return type(self)(table, self.__root)
-
-    def repeatChanels(self, repeat=0, no_repeat_first_ch=True):
-        interval = self.__table.repeat(repeat+1, 1)
-        if no_repeat_first_ch:
-            interval = np.delete(interval, range(repeat), 1)
-
-        return type(self)(interval, self.__root)
-
-    def repeatWord(self, repeat=0):
-        interval = self.__table.repeat(repeat+1, 0)
-
-        return type(self)(interval, self.__root)
-
-    def randomizeChannels(self):
-        interval = self.__table
-        word_count = len(self.__table)
-        [np.random.shuffle(interval[i]) for i in range(word_count)]
-
-        return type(self)(interval, self.__root)
-
-    def randomizeWords(self):
-        interval = self.__table
-        np.random.shuffle(interval)
-
-        return type(self)(interval, self.__root)
-
-    def slice(self, start=0, end=-1):
-        return type(self)(self.__table[start:end], self.__root)
 
 
 class Playlist:
@@ -158,91 +101,152 @@ class Playlist:
         return Table(swaped_chanels, root_path)
 
 
-def playTest(segment):
-    play(segment)
+@dataclass
+class Table:
+    __table: np.ndarray
+    __root: str
+
+    def get_chanels_indexis(self):
+        count = len(self.__table[0])
+        return [n for n in range(0, count)]
+
+    def show(self):
+        for chanel in self.__table:
+            print("[")
+            for file in chanel:
+                print("\t", file)
+            print("]")
+
+    def filter(self, channels=[]):
+        if not channels:
+            channels = self.get_chanels_indexis()
+
+        if max(channels) > len(self.__table[0]) - 1:
+            raise IndexError("channels out of range.")
+
+        table = self.__table[:, channels]
+        return type(self)(table, self.__root)
+
+    def repeatChanels(self, repeat=0, no_repeat_first_ch=True):
+        interval = self.__table.repeat(repeat+1, 1)
+        if no_repeat_first_ch:
+            interval = np.delete(interval, range(repeat), 1)
+
+        return type(self)(interval, self.__root)
+
+    def repeatWord(self, repeat=0):
+        interval = self.__table.repeat(repeat+1, 0)
+
+        return type(self)(interval, self.__root)
+
+    def randomizeChannels(self):
+        interval = self.__table
+        word_count = len(self.__table)
+        [np.random.shuffle(interval[i]) for i in range(word_count)]
+
+        return type(self)(interval, self.__root)
+
+    def randomizeWords(self):
+        interval = self.__table
+        np.random.shuffle(interval)
+
+        return type(self)(interval, self.__root)
+
+    def slice(self, start=0, end=-1):
+        return type(self)(self.__table[start:end], self.__root)
+
+    def makeInterval(self, chanel_gap=2, word_gap=0, word_speed=1):
+        channel_silence = AudioSegment.silent(duration=chanel_gap * 1000)
+        word_silence = AudioSegment.silent(duration=word_gap * 1000)
+
+        intervalSegment = AudioSegment.empty()
+        for word in self.__table:
+            wordSegment = AudioSegment.empty()
+
+            for chanel in word:
+                if not chanel[1]:
+                    continue
+
+                file_path = os.path.join(self.__root, chanel[1])
+                chanelSegmet = AudioSegment.from_mp3(file_path)
+                wordSegment = wordSegment + chanelSegmet
+                wordSegment = wordSegment + channel_silence
+
+            intervalSegment = intervalSegment + wordSegment
+            intervalSegment = intervalSegment + word_silence
+
+        return (intervalSegment, '')
 
 
-def makeInterval(chanel_gap=2, word_gap=0, word_speed=1):
+@dataclass
+class Audio:
+    __intervalsSegments: [AudioSegment]
+    __music_files: [str] = field(default_factory=list)
+    __interval_gap: int = 2
+    __music_gap: int = 0
+    __music_loop: bool = True
+    __music_vol: int = 1
+    __voice_vol: int = 1
+    __end_padding: int = 0
 
-    # interval = np.array(State.chanels[:word_count])
+    def __compile(self, repeat=0, randomize=False):
+        # interval is tuple (AudioSegment, list_of_caption)
+        intervals = self.__intervalsSegments
 
-    # BUG: we need random in groups (when reped channel) and that include the were the first word is not repete
+        # VOCABS
+        # parameter
+        if repeat:
+            repeated = []
+            for interval in intervals:
+                for i in range(repeat+1):
+                    repeated.append(interval)
+            intervals = repeated
 
-    channel_silence = AudioSegment.silent(duration=chanel_gap * 1000)
-    word_silence = AudioSegment.silent(duration=word_gap * 1000)
+        if randomize:
+            random.shuffle(intervals)
 
-    intervalSegment = AudioSegment.empty()
-
-    for word in interval:
-        wordSegment = AudioSegment.empty()
-
-        for chanel in word:
-            if not chanel[1]:
-                continue
-
-            file_path = os.path.join(State.root_path, chanel[1])
-
-            chanelSegmet = AudioSegment.from_mp3(file_path)
-            wordSegment = wordSegment + chanelSegmet
-            wordSegment = wordSegment + channel_silence
-
-        intervalSegment = intervalSegment + wordSegment
-        intervalSegment = intervalSegment + word_silence
-
-    return (intervalSegment, '')
-
-
-def joinIntervals(intervals, music_gap=0, interval_gap=0, repeat=0, randomize=False, music_mute=False, music_loop=True, music_repeat=0, music_vol=0, voice_vol=0, end_padding=0):
-    # interval is tuple (AudioSegment, list_of_caption)
-
-    #   VOCABS
-    if repeat:
-        repeated = []
+        # compilation
+        intervalsSegments = AudioSegment.empty()
+        intervalSilence = AudioSegment.silent(
+            duration=self.__interval_gap*1000)
         for interval in intervals:
-            for i in range(repeat+1):
-                repeated.append(interval)
+            intervalsSegments = intervalsSegments + interval[0]
+            intervalsSegments = intervalsSegments + intervalSilence
 
-        intervals = repeated
+        intervalsSegments = intervalsSegments + \
+            AudioSegment.silent(duration=self.__end_padding*1000)
 
-    if randomize:
-        random.shuffle(intervals)
+        # MUISC
+        music = AudioSegment.empty()
+        music_silence = AudioSegment.silent(duration=self.__music_gap*1000)
+        for path in self.__music_files:
+            song = AudioSegment.from_mp3(path)
+            for i in range(music_repeat+1):
+                music = music + song
+                music = music + music_vol
+            music = music + music_silence
 
-    intervalsSegments = AudioSegment.empty()
-    intervalSilence = AudioSegment.silent(duration=interval_gap*1000)
-    for interval in intervals:
-        intervalsSegments = intervalsSegments + interval[0]
-        intervalsSegments = intervalsSegments + intervalSilence
+        # JOIN VOCABS & MUSIC
+        if self.__music_files:
+            intervalsSegments = intervalsSegments.overlay(
+                music, gain_during_overlay=voice_vol, loop=music_loop)
 
-    intervalsSegments = intervalsSegments + \
-        AudioSegment.silent(duration=end_padding*1000)
+        # TODO: make list of captions
+        list_of_caption = ''
+        # return intervalsSegments, list_of_caption
+        return intervalsSegments
 
-    #   MUISC
-    if music_mute:
-        State.music_files = []
+    def play(self, limit=-1):
+        limit = limit*1000 if limit > -1 else -1
 
-    music = AudioSegment.empty()
-    music_silence = AudioSegment.silent(duration=music_gap*1000)
-    for path in State.music_files:
-        song = AudioSegment.from_mp3(path)
-        for i in range(music_repeat+1):
-            music = music + song
-            music = music + music_vol
-        music = music + music_silence
+        audioSegment = self.__compile()
+        play(audioSegment[:limit])
 
-    # JOIN
-    if State.music_files:
-        intervalsSegments = intervalsSegments.overlay(
-            music, gain_during_overlay=voice_vol, loop=music_loop)
+    def saveMp3(self, path=''):
+        if not path:
+            path = os.getcwd() + '/list.mp3'
 
-    # TODO: make list of captions
-    list_of_caption = ''
-    return intervalsSegments, list_of_caption
+        audiosegment = self.__compile()
+        audiosegment.export(path, format='mp3')
 
-
-def saveMp3(audiosegment, path=''):
-    if not path:
-        path = os.getcwd() + '/list.mp3'
-
-    audiosegment.export(path, format='mp3')
-
-    print(f"Compilation saved succesfuly in {path}")
+        print(f"Compilation saved succesfuly in {path}")
