@@ -9,6 +9,7 @@ import math
 
 # HELPER'S FUNCTIONS
 
+# TODO: NEW! adding voice segment functionality
 # TODO: 4. make the channel table 3d
 # TODO: 5. make grouping channels functionality
 # TODO: 6. make the seperate stats join together to create state with multiple channels
@@ -180,7 +181,7 @@ class Table:
 
 @dataclass
 class Audio:
-    __intervalsSegments: [AudioSegment]
+    __intervalSegments: [AudioSegment]
     __music_files: [str] = field(default_factory=list)
     __interval_gap: int = 2
     __music_gap: int = 0
@@ -207,9 +208,16 @@ class Audio:
     def increasMusicVolume(self, vol):
         self.__music_vol = vol
 
+    def addSegments(self, intervals):
+        segments = intervals.getSegments()
+        self.__intervalSegments.extend(segments)
+
+    def getSegments(self):
+        return self.__intervalSegments
+
     def __compile(self, repeat=0, randomize=False):
         # interval is tuple (AudioSegment, list_of_caption)
-        intervals = self.__intervalsSegments
+        intervals = self.__intervalSegments
 
         # VOCABS
         # parameter
