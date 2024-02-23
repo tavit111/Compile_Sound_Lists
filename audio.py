@@ -176,7 +176,7 @@ class Table:
             intervalSegment = intervalSegment + wordSegment
             intervalSegment = intervalSegment + word_silence
 
-        return (intervalSegment, '')
+        return Audio([(intervalSegment, '')])
 
 
 @dataclass

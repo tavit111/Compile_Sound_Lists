@@ -19,13 +19,10 @@ table2 = Playlist.creatTable(
 )
 
 two = table1.filter([0, 1]).slice(2).makeInterval()
-two_audio = Audio([two])
-
 one = table2.filter([2]).slice(2).makeInterval()
-one_audio = Audio([one])
 
-one_audio.addSegments(two_audio)
-one_audio.play()
+two.addSegments(one)
+two.play()
 
 # fiszki = makeInterval(
 #     5, [1, 0, 3, 2, 5, 4], chanel_gap=1, repeat_chanel=0, repeat_word=0, no_repeat_first_ch=False, randomize_channels=False)
