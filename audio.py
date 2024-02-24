@@ -8,8 +8,8 @@ import random
 import math
 
 # HELPER'S FUNCTIONS
-
-# TODO: NEW! adding voice segment functionality
+# TODO: Rename channel to language and word to
+# TODO: integreate ids with other functionlities
 # TODO: 4. make the channel table 3d
 # TODO: 5. make grouping channels functionality
 # TODO: 6. make the seperate stats join together to create state with multiple channels
@@ -66,9 +66,11 @@ class Playlist:
 
         chanel_count = int(len(data[0])/2)
         data = np.reshape(data, (-1, chanel_count, 2))
+        dataId = cls.__addIdsToChannels(data)
 
-        return Table(data, root_path)
+        return Table(dataId, root_path)
 
+    # TODO: Id system has to be added here
     @classmethod
     def __read_chanels_from_files(cls, root_path):
         if not os.path.isdir(root_path):
@@ -101,6 +103,17 @@ class Playlist:
 
         return Table(swaped_chanels, root_path)
 
+    @classmethod
+    def __addIdsToChannels(cls, data):
+        dataId = []
+        for word in data:
+            wordId = []
+            for id, chanel in enumerate(word, start=1):
+                wordId.append([id, chanel[0], chanel[1]])
+            dataId.append(wordId)
+
+        return dataId
+
 
 @dataclass
 class Table:
@@ -118,15 +131,21 @@ class Table:
                 print("\t", file)
             print("]")
 
-    def filter(self, channels=[]):
-        if not channels:
-            channels = self.get_chanels_indexis()
+    def filter(self, chanel_ids=[]):
+        if not chanel_ids:
+            chanel_ids = self.get_chanels_indexis()
 
-        if max(channels) > len(self.__table[0]) - 1:
+        if max(chanel_ids) > len(self.__table[0]):
             raise IndexError("channels out of range.")
 
-        table = self.__table[:, channels]
-        return type(self)(table, self.__root)
+        table = self.__table
+        filtered_table = [self.__filter_channel_ids(
+            word, chanel_ids) for word in table]
+
+        return type(self)(filtered_table, self.__root)
+
+    def __filter_channel_ids(self, word, ids):
+        return [chanel for chanel in word if chanel[0] in ids]
 
     def repeatChanels(self, repeat=0, no_repeat_first_ch=True):
         interval = self.__table.repeat(repeat+1, 1)
