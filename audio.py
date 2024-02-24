@@ -8,7 +8,7 @@ import random
 import math
 
 # HELPER'S FUNCTIONS
-# TODO: Rename channel to language and word to
+# TODO: check __compile is there is stil need for reapet and randomize
 # TODO: integreate ids with other functionlities
 # TODO: 4. make the channel table 3d
 # TODO: 5. make grouping channels functionality
@@ -18,72 +18,38 @@ import math
 # channel_paths = [(path1, script), (path2, script), (path3, script)]
 
 
-class State:
-    chanels = []
-    music_files = []
-
-    def __init__(self, root, csv):
-        State.root_path = root
-        self.__root_path = root
-        self.__music_dir = ''
-        self.__read_music()
-        self.setting_file = ''
-
-    @staticmethod
-    def get_chanels_indexis():
-        count = len(State.chanels[0])
-        return [n for n in range(0, count)]
-
-    def __read_music(self):
-        if not self.__music_dir and not self.__root_path:
-            return
-
-        if self.__music_dir:
-            music_path = self.__music_dir
-
-        elif self.__root_path:
-            dir_paths = list_directories(self.__root_path)
-            chanel_paths, music_path = extractMusicPath(
-                dir_paths)
-
-        music_paths = list_mp3s(music_path)
-
-        for path in music_paths:
-            State.music_files.append(path)
-
-
 class Playlist:
     @classmethod
     def creatTable(cls, root_path='', csv_file=''):
         if csv_file:
-            return cls.__read_chanels_from_csv(csv_file, root_path)
+            return cls.__read_from_csv(csv_file, root_path)
         elif root_path:
-            return cls.__read_chanels_from_files(root_path)
+            return cls.__read_from_dir(root_path)
 
     @classmethod
-    def __read_chanels_from_csv(cls, csv_file, root_path):
+    def __read_from_csv(cls, csv_file, root_path):
         data = readCSV(csv_file,  False)
 
-        chanel_count = int(len(data[0])/2)
-        data = np.reshape(data, (-1, chanel_count, 2))
-        dataId = cls.__addIdsToChannels(data)
+        languages_count = int(len(data[0])/2)
+        data = np.reshape(data, (-1, languages_count, 2))
+        dataId = cls.__addIdsToLanguages(data)
 
         return Table(dataId, root_path)
 
     # TODO: Id system has to be added here
     @classmethod
-    def __read_chanels_from_files(cls, root_path):
+    def __read_from_dir(cls, root_path):
         if not os.path.isdir(root_path):
             raise FileNotFoundError("Root directory dose not exist")
 
         dir_paths = list_directories(root_path)
-        chanel_paths, music_path = extractMusicPath(
+        languages_paths, music_path = extractMusicPath(
             dir_paths)
 
-        chanels = []
-        for chanel_path in chanel_paths:
-            trasnscription_dir_path = get_script_dir(chanel_path)
-            mp3_paths = list_mp3s(chanel_path)
+        languages = []
+        for languages_path in languages_paths:
+            trasnscription_dir_path = get_script_dir(languages_path)
+            mp3_paths = list_mp3s(languages_path)
             transcripts = extract_transcript(trasnscription_dir_path)
 
             missing_audio_indices = get_missing_contunity_of_numbered_files(
@@ -92,24 +58,24 @@ class Playlist:
             zipped = zip_path_transcript(
                 mp3_paths, transcripts, missing_audio_indices)
 
-            chanels.append(zipped)
+            languages.append(zipped)
 
-        max_chanel_length = max([len(chanel) for chanel in chanels])
-        for chanel in chanels:
-            if len(chanel) < max_chanel_length:
-                diff = max_chanel_length - len(chanel)
-                chanel.extend([['', ''] for i in range(diff)])
-        swaped_chanels = np.swapaxes(chanels, 0, 1)
+        max_languages_length = max([len(language) for language in languages])
+        for language in languages:
+            if len(language) < max_languages_length:
+                diff = max_languages_length - len(language)
+                language.extend([['', ''] for i in range(diff)])
+        swaped_languages = np.swapaxes(languages, 0, 1)
 
-        return Table(swaped_chanels, root_path)
+        return Table(swaped_languages, root_path)
 
     @classmethod
-    def __addIdsToChannels(cls, data):
+    def __addIdsToLanguages(cls, data):
         dataId = []
         for word in data:
             wordId = []
-            for id, chanel in enumerate(word, start=1):
-                wordId.append([id, chanel[0], chanel[1]])
+            for id, language in enumerate(word, start=1):
+                wordId.append([id, language[0], language[1]])
             dataId.append(wordId)
 
         return dataId
@@ -120,97 +86,97 @@ class Table:
     __table: np.ndarray
     __root: str
 
-    def get_chanels_indexis(self):
+    def get_languages_indices(self):
         count = len(self.__table[0])
         return [n for n in range(0, count)]
 
     def show(self):
-        for chanel in self.__table:
+        for word in self.__table:
             print("[")
-            for file in chanel:
-                print("\t", file)
+            for language in word:
+                print("\t", language)
             print("]")
 
-    def filter(self, chanel_ids=[]):
-        if not chanel_ids:
-            chanel_ids = self.get_chanels_indexis()
+    def filter(self, language_ids=[]):
+        if not language_ids:
+            language_ids = self.get_languages_indices()
 
-        if max(chanel_ids) > len(self.__table[0]):
-            raise IndexError("channels out of range.")
+        if max(language_ids) > len(self.__table[0]):
+            raise IndexError("id out of range.")
 
         table = self.__table
-        filtered_table = [self.__filter_channel_ids(
-            word, chanel_ids) for word in table]
+        filtered_table = [self.__filter_language_ids(
+            word, language_ids) for word in table]
 
         return type(self)(filtered_table, self.__root)
 
-    def __filter_channel_ids(self, word, ids):
-        return [chanel for chanel in word if chanel[0] in ids]
+    def __filter_language_ids(self, word, ids):
+        return [language for language in word if language[0] in ids]
 
-    def repeatChanels(self, repeat=0, no_repeat_first_ch=True):
-        interval = self.__table.repeat(repeat+1, 1)
-        if no_repeat_first_ch:
-            interval = np.delete(interval, range(repeat), 1)
+    def repeatLanguages(self, repeat=0, no_repeat_first_lang=True):
+        table = self.__table.repeat(repeat+1, 1)
+        if no_repeat_first_lang:
+            table = np.delete(table, range(repeat), 1)
 
-        return type(self)(interval, self.__root)
+        return type(self)(table, self.__root)
 
     def repeatWord(self, repeat=0):
-        interval = self.__table.repeat(repeat+1, 0)
+        table = self.__table.repeat(repeat+1, 0)
 
-        return type(self)(interval, self.__root)
+        return type(self)(table, self.__root)
 
-    def randomizeChannels(self):
-        interval = self.__table
-        word_count = len(self.__table)
-        [np.random.shuffle(interval[i]) for i in range(word_count)]
+    def randomLanguageOrder(self):
+        table = self.__table
+        words_count = len(self.__table)
+        [np.random.shuffle(table[i]) for i in range(words_count)]
 
-        return type(self)(interval, self.__root)
+        return type(self)(table, self.__root)
 
-    def randomizeWords(self):
-        interval = self.__table
-        np.random.shuffle(interval)
+    def randomWordOrder(self):
+        table = self.__table
+        np.random.shuffle(table)
 
-        return type(self)(interval, self.__root)
+        return type(self)(table, self.__root)
 
     def slice(self, start=0, end=-1):
         return type(self)(self.__table[start:end], self.__root)
 
-    def makeInterval(self, chanel_gap=2, word_gap=0, word_speed=1):
-        channel_silence = AudioSegment.silent(duration=chanel_gap * 1000)
+    def makeAudio(self, languge_gap=2, word_gap=0, word_speed=1):
+        language_silence = AudioSegment.silent(duration=languge_gap * 1000)
         word_silence = AudioSegment.silent(duration=word_gap * 1000)
 
-        intervalSegment = AudioSegment.empty()
+        wholeSegment = AudioSegment.empty()
         for word in self.__table:
             wordSegment = AudioSegment.empty()
 
-            for chanel in word:
-                if not chanel[1]:
+            for language in word:
+                if not language[1]:
                     continue
 
-                file_path = os.path.join(self.__root, chanel[1])
-                chanelSegmet = AudioSegment.from_mp3(file_path)
-                wordSegment = wordSegment + chanelSegmet
-                wordSegment = wordSegment + channel_silence
+                file_path = os.path.join(self.__root, language[2])
+                languageSegmet = AudioSegment.from_mp3(file_path)
+                wordSegment = wordSegment + languageSegmet
+                wordSegment = wordSegment + language_silence
 
-            intervalSegment = intervalSegment + wordSegment
-            intervalSegment = intervalSegment + word_silence
+            wholeSegment = wholeSegment + wordSegment
+            wholeSegment = wholeSegment + word_silence
 
-        return Audio([(intervalSegment, '')])
+        return Audio([(wholeSegment, '')])
 
 
 @dataclass
 class Audio:
-    __intervalSegments: [AudioSegment]
+    __vocabularySegments: [AudioSegment]
     __music_files: [str] = field(default_factory=list)
-    __interval_gap: int = 2
+    __vocabularySegment_gap: int = 2
     __music_gap: int = 0
     __music_loop: bool = True
     __end_padding: int = 0
-    __voice_vol: int = 0
+    __vocabulary_vol: int = 0
     __music_vol: int = 0
 
-    def setIntervalGap(self, gap):
-        self.__interval_gap = gap
+    def setVocabSegmentGaps(self, gap):
+        self.__vocabularySegment_gap = gap
 
     def setMusicGap(self, gap):
         self.__music_gap = gap
@@ -222,44 +188,45 @@ class Audio:
         self.__end_padding = duration
 
     def increasVoiceVolume(self, vol):
-        self.__voice_vol = vol
+        self.__vocabulary_vol = vol
 
     def increasMusicVolume(self, vol):
         self.__music_vol = vol
 
-    def addSegments(self, intervals):
-        segments = intervals.getSegments()
-        self.__intervalSegments.extend(segments)
+    def addAudio(self, audioSegments):
+        segments = audioSegments.getSegments()
+        self.__vocabularySegments.extend(segments)
 
     def getSegments(self):
-        return self.__intervalSegments
+        return self.__vocabularySegments
 
     def __compile(self, repeat=0, randomize=False):
-        # interval is tuple (AudioSegment, list_of_caption)
-        intervals = self.__intervalSegments
+        # segment is tuple (AudioSegment, list_of_caption)
+        segments = self.__vocabularySegments
 
         # VOCABS
         # parameter
         if repeat:
             repeated = []
-            for interval in intervals:
+            for segment in segments:
                 for i in range(repeat+1):
-                    repeated.append(interval)
-            intervals = repeated
+                    repeated.append(segment)
+            segments = repeated
 
         if randomize:
-            random.shuffle(intervals)
+            random.shuffle(segments)
 
         # compilation
-        intervalsSegments = AudioSegment.empty()
-        intervalSilence = AudioSegment.silent(
-            duration=self.__interval_gap*1000)
-        for interval in intervals:
-            intervalsSegments = intervalsSegments + interval[0]
-            intervalsSegments = intervalsSegments.apply_gain(self.__voice_vol)
-            intervalsSegments = intervalsSegments + intervalSilence
+        allVocabularySegments = AudioSegment.empty()
+        silenceGap = AudioSegment.silent(
+            duration=self.__vocabularySegment_gap*1000)
+        for segment in segments:
+            allVocabularySegments = allVocabularySegments + segment[0]
+            allVocabularySegments = allVocabularySegments.apply_gain(
+                self.__vocabulary_vol)
+            allVocabularySegments = allVocabularySegments + silenceGap
 
-        intervalsSegments = intervalsSegments + \
+        allVocabularySegments = allVocabularySegments + \
             AudioSegment.silent(duration=self.__end_padding*1000)
 
         # MUISC
@@ -274,13 +241,13 @@ class Audio:
 
         # JOIN VOCABS & MUSIC
         if self.__music_files:
-            intervalsSegments = intervalsSegments.overlay(
+            allVocabularySegments = allVocabularySegments.overlay(
                 music, loop=self.__music_loop)
 
         # TODO: make list of captions
         list_of_caption = ''
-        # return intervalsSegments, list_of_caption
-        return intervalsSegments
+        # return allVocabularySegments, list_of_caption
+        return allVocabularySegments
 
     def addMusic(self, path):
         if not is_mp3_file(path):
