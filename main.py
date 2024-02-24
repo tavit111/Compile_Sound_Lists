@@ -1,4 +1,4 @@
-from audio import Playlist, Audio
+from playlist import Playlist
 
 table1 = Playlist.creatTable(
     root_path='/home/tavit/Code/Compile_Sound_Lists/media/',
@@ -7,4 +7,4 @@ table1 = Playlist.creatTable(
 
 audio = table1.filter([3, 2, 1]).randomLanguageOrder(
 ).randomWordOrder().slice(0, 2).makeAudio()
-audio.saveMp3()
+audio.play()
