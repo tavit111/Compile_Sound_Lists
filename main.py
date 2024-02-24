@@ -15,3 +15,4 @@ table1 = Playlist.creatTable(
 audio = table1.filter([3, 2, 1]).randomLanguageOrder(
 ).randomWordOrder().slice(0, 2).makeAudio()
 audio.play()
+audio.play()
