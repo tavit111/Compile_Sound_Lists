@@ -65,18 +65,23 @@ class Table:
     def slice(self, start=0, end=-1):
         return type(self)(self.__table[start:end], self.__root)
 
-    def makeAudio(self, languge_gap=2, word_gap=0, word_speed=1):
+    def makeAudio(self, series_name='', title_name='', languge_gap=2, word_gap=0, word_speed=1):
         language_silence = AudioSegment.silent(duration=languge_gap * 1000)
         word_silence = AudioSegment.silent(duration=word_gap * 1000)
 
         wholeSegment = AudioSegment.empty()
+        wholeScript = []
+        timestamp = 0
         for word in self.__table:
             wordSegment = AudioSegment.empty()
-
+            word_script = ''
             for language in word:
                 if not language[1]:
                     continue
-
+                
+                script = language[1]
+                word_script = script if not word_script else f"{word_script} {script}"
+                
                 file_path = os.path.join(self.__root, language[2])
                 languageSegmet = AudioSegment.from_mp3(file_path)
                 wordSegment = wordSegment + languageSegmet
@@ -84,5 +89,7 @@ class Table:
 
             wholeSegment = wholeSegment + wordSegment
             wholeSegment = wholeSegment + word_silence
+            wholeScript.append((timestamp, word_script))
+            timestamp = len(wholeSegment)
 
-        return Audio([(wholeSegment, '')])
+        return Audio([(wholeSegment, wholeScript)], series_name, title_name)
