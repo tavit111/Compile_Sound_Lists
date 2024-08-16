@@ -7,21 +7,21 @@ from table import Table
 
 class Playlist:
     @classmethod
-    def creatTable(cls, root_path='', csv_file=''):
+    def creatTable(cls, root_path='', csv_file='', is_anki_path=False):
         if csv_file:
-            return cls.__read_from_csv(csv_file, root_path)
+            return cls.__read_from_csv(csv_file, root_path, is_anki_path)
         elif root_path:
             return cls.__read_from_dir(root_path)
 
     @classmethod
-    def __read_from_csv(cls, csv_file, root_path):
+    def __read_from_csv(cls, csv_file, root_path, is_anki_path):
         data = readCSV(csv_file,  False)
 
         languages_count = int(len(data[0])/2)
         data = np.reshape(data, (-1, languages_count, 2))
         dataId = cls.__addIdsToLanguages(data)
 
-        return Table(dataId, root_path)
+        return Table(dataId, root_path, is_anki_path)
 
     # TODO: Id system has to be added here
     @classmethod

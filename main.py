@@ -9,8 +9,9 @@ from playlist import Playlist
 
 
 table1 = Playlist.creatTable(
-    root_path='/home/tavit/Code/Compile_Sound_Lists/media/',
-    csv_file="/home/tavit/Code/Compile_Sound_Lists/media/iknow.csv"
+    root_path='/home/tavit/Code/Compile_Sound_Lists/media/iknow_sentences',
+    csv_file="/home/tavit/Code/Compile_Sound_Lists/media/iknow_v3.csv",
+    is_anki_path=True,
 )
 
 #audio = table1.filter([3, 2, 1]).randomLanguageOrder(
@@ -23,11 +24,14 @@ table1 = Playlist.creatTable(
 #Important for lyric to work. Lyric have to be titled with both of those name and pair mp3 lyric should have uniq combination of both
 
 
-audio1 = table1.randomWordOrder().makeAudio("iKnow", "1.1k")
+audio1 = table1.slice(0, 10).makeAudio()
+# .makeAudio("iKnow", "1.1_v2")
+# randomWordOrder().makeAudio("iKnow", "1.1")
 # audio2 = table1.randomWordOrder().makeAudio()
 # audio3 = table1.randomWordOrder().makeAudio()
 
-audio1.addAudio(audio2)
-audio1.addAudio(audio3)
+# audio1.addAudio(audio2)
+# audio1.addAudio(audio3)
 
-audio1.saveMp3()
+# audio1.saveMp3("./iknow_v2.mp3")
+audio1.saveMp3(path="./iknow_v3")

@@ -129,7 +129,6 @@ class Audio:
 
         audio.setall("SYLT", [SYLT(encoding=Encoding.UTF8, lang='eng', format=2, type=1, text=lyric)])
         audio.save(v2_version=4)
-        print(audio.get('SYLT::eng'))
 
         # audio.add(lyrics_frame)
         # audio.save()
@@ -139,7 +138,10 @@ class Audio:
     
     def __saveScript(self, path=''):
         if not path:
-            path = os.getcwd() + f"/{self.__title_name} - {self.__series_name}.lrc"
+            if self.__series_name and self.__title_name:
+                path = os.getcwd() + f"/{self.__title_name} - {self.__series_name}.lrc"
+            else:
+                path = os.getcwd() + "/script.lrc"
         
         with open(path, 'w') as file:
             file.write(f"[ti:{self.__title_name}]\n")

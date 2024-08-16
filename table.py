@@ -3,12 +3,15 @@ import os
 from pydub import AudioSegment
 import numpy as np
 from audio import Audio
+import re
+import sys
 
 
 @dataclass
 class Table:
     __table: np.ndarray
     __root: str
+    __is_anki_path: bool
 
     def get_languages_indices(self):
         count = len(self.__table[0])
@@ -32,7 +35,7 @@ class Table:
         filtered_table = [self.__filter_language_ids(
             word, language_ids) for word in table]
 
-        return type(self)(filtered_table, self.__root)
+        return type(self)(filtered_table, self.__root, self.__is_anki_path)
 
     def __filter_language_ids(self, word, ids):
         return [language for language in word if language[0] in ids]
@@ -42,19 +45,19 @@ class Table:
         if no_repeat_first_lang:
             table = np.delete(table, range(repeat), 1)
 
-        return type(self)(table, self.__root)
+        return type(self)(table, self.__root, self.__is_anki_path)
 
     def repeatWord(self, repeat=0):
         table = self.__table.repeat(repeat+1, 0)
 
-        return type(self)(table, self.__root)
+        return type(self)(table, self.__root, self.__is_anki_path)
 
     def randomLanguageOrder(self):
         table = self.__table
         words_count = len(self.__table)
         [np.random.shuffle(table[i]) for i in range(words_count)]
 
-        return type(self)(table, self.__root)
+        return type(self)(table, self.__root, self.__is_anki_path)
 
     def randomWordOrder(self):
         table = self.__table
@@ -63,7 +66,16 @@ class Table:
         return type(self)(table, self.__root)
 
     def slice(self, start=0, end=-1):
-        return type(self)(self.__table[start:end], self.__root)
+        return type(self)(self.__table[start:end], self.__root, self.__is_anki_path)
+    
+    def __ankiToNormalPath(self, path):
+        match = re.search(r'\[sound:(.*?)\]', path)
+        
+        if not match:
+            raise ValueError("The input string does not contain a valid [sound:filename] pattern.")
+        
+        return match.group(1)
+
 
     def makeAudio(self, series_name='', title_name='', languge_gap=2, word_gap=0, word_speed=1):
         language_silence = AudioSegment.silent(duration=languge_gap * 1000)
@@ -76,13 +88,21 @@ class Table:
             wordSegment = AudioSegment.empty()
             word_script = ''
             for language in word:
-                if not language[1]:
+                script = language[1]
+
+                file_name = language[2]
+                if not script:
                     continue
                 
                 script = language[1]
                 word_script = script if not word_script else f"{word_script} {script}"
                 
-                file_path = os.path.join(self.__root, language[2])
+
+                if self.__is_anki_path:
+                    file_name = self.__ankiToNormalPath(file_name)
+
+                file_path = os.path.join(self.__root, file_name)
+   
                 languageSegmet = AudioSegment.from_mp3(file_path)
                 wordSegment = wordSegment + languageSegmet
                 wordSegment = wordSegment + language_silence
