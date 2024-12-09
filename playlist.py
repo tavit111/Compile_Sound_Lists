@@ -3,6 +3,7 @@ from files import list_directories, extractMusicPath, list_mp3s, extract_transcr
 import numpy as np
 import random
 from table import Table
+import math
 
 
 class Playlist:
@@ -17,7 +18,13 @@ class Playlist:
     def __read_from_csv(cls, csv_file, root_path, is_anki_path):
         data = readCSV(csv_file,  False)
 
-        languages_count = int(len(data[0])/2)
+        languages_count = len(data[0])/2
+        # TODO: if language_count % 2 not 0 than add one column at the end
+        if languages_count % 2 != 0:
+            data = [[*row, ''] for row in data]
+        
+        languages_count = math.ceil(languages_count)
+
         data = np.reshape(data, (-1, languages_count, 2))
         dataId = cls.__addIdsToLanguages(data)
 

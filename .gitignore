@@ -1,5 +1,7 @@
 /media
 /__pycache__
+/test
+/compiled
 _files.py
 notes
 example

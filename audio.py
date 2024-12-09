@@ -4,6 +4,8 @@ from pydub import AudioSegment
 from pydub.playback import play
 from files import is_mp3_file
 from mutagen.id3 import ID3, SYLT, Encoding
+from compiled import Compiled
+
 
 
 @dataclass
@@ -12,7 +14,7 @@ class Audio:
     __series_name: [str] = ''
     __title_name: [str] = ''
     __music_files: [str] = field(default_factory=list)
-    __captions:[(int, str)] = field(default_factory=list)
+    __captions:[(int, int, str)] = field(default_factory=list)
     __vocabularySegment_gap: int = 2
     __music_gap: int = 0
     __music_loop: bool = True
@@ -45,24 +47,14 @@ class Audio:
     def getSegments(self):
         return self.__vocabularySegments
 
-    def __milisecondsToStr(self, time):
-        total_seconds = time // 1000
-        
-        minutes, seconds = divmod(total_seconds, 60)
-        hours, minutes = divmod(minutes, 60)
-        
-        #if hours > 0:
-            #return f"{hours:d}:{minutes:02d}:{seconds:02d}"
-        #else:
-            #return f"{minutes:02d}:{seconds:02d}"
-        
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-
     def __addScripts(self, scripts, previous_segment_len):
-        for (time, script) in scripts:
-            new_time = time + previous_segment_len
-            self.__captions.append((new_time, script))
+        captions = []
+        for (start_time, end_time, *script) in scripts:
+            new_start = start_time + previous_segment_len
+            new_end = end_time + previous_segment_len
+            self.__captions.append((new_start, new_end, *script))
 
+# TODO: make compilation return new object
     def __compile(self, repeat=0, randomize=False):
         # segment is tuple (AudioSegment, list_of_caption)
         segments = self.__vocabularySegments
@@ -111,65 +103,7 @@ class Audio:
 
         self.__music_files.append(path)
 
-    def play(self, limit=-1):
-        limit = limit*1000 if limit > -1 else -1
-
-        audioSegment = self.__compile()
-        play(audioSegment[:limit])
-
-    def __imbedLyric(self, mp3_file):
-        audio = ID3(mp3_file)
-        lyric = [(text, time )for (time, text) in self.__captions]
-
-        lyrics_frame = SYLT(encoding=Encoding.UTF8, lang='eng', format=2, type=1, text=lyric)
-        # lyrics_frame = SYLT(encoding=Encoding.UTF8, lang='eng', format=2, type=1, text=[])
-        # for timestamp, lyric in self.__captions:
-        #     lyrics_frame.text.append((lyric, timestamp))
-
-
-        audio.setall("SYLT", [SYLT(encoding=Encoding.UTF8, lang='eng', format=2, type=1, text=lyric)])
-        audio.save(v2_version=4)
-
-        # audio.add(lyrics_frame)
-        # audio.save()
-        print("Synchronized lyrics added successfully!")
-
-
-    
-    def __saveScript(self, path=''):
-        if not path:
-            if self.__series_name and self.__title_name:
-                path = os.getcwd() + f"/{self.__title_name} - {self.__series_name}.lrc"
-            else:
-                path = os.getcwd() + "/script.lrc"
-        
-        with open(path, 'w') as file:
-            file.write(f"[ti:{self.__title_name}]\n")
-            file.write(f"[ar:{self.__series_name}]\n")
-            file.write(f"[al:iknowJp]\n")
-
-            for script in self.__captions:
-                timeMs = script[0]
-                timeStr = self.__milisecondsToStr(timeMs)
-                text = script[1]
-                file.write(f"[{timeStr}] {text}\n")
-        
-        print(f"Script saved succesfuly in {path}")
-
-
-    def saveMp3(self, path=''):
-        if not path:
-            path = os.getcwd() + '/list.mp3'
-
+    def compile(self):
         audiosegment = self.__compile()
         
-        tags = {
-            "artist": self.__series_name,
-            "title": self.__title_name,
-        }
-        
-        audiosegment.export(path, format='mp3', tags=tags)
-        print(f"Compilation saved succesfuly in {path}")
-        
-        self.__imbedLyric(path)
-        self.__saveScript()
+        return Compiled(audiosegment, self.__captions)

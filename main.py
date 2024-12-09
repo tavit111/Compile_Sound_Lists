@@ -8,30 +8,63 @@ from playlist import Playlist
 # IDEA: make function to ignore column by index number
 
 
-table1 = Playlist.creatTable(
-    root_path='/home/tavit/Code/Compile_Sound_Lists/media/iknow_sentences',
-    csv_file="/home/tavit/Code/Compile_Sound_Lists/media/iknow_v3.csv",
-    is_anki_path=True,
+
+
+
+table = Playlist.creatTable(
+    root_path='/home/tavit/Code/Compile_Sound_Lists/media/iknow_sentences/',
+    csv_file=f"/home/tavit/Code/Compile_Sound_Lists/media/1532_iknow.csv",
+    is_anki_path=True
 )
 
-#audio = table1.filter([3, 2, 1]).randomLanguageOrder(
-#).randomWordOrder().slice(0, 2).makeAudio()
-#audio.play()
-#audio.play()
+def randomized_list(files_number, sentnece_number_per_file):
+    # files_number - how many files to generate, sentnece_number_per_file - how many sentences per file you want to have
+    
+    table_randomized = table.randomWordOrder()
+    numbers = range(1, files_number+1)  #make list form 1 to 7 (7 unit blocs)
+    count = sentnece_number_per_file
+    units = [(n, n*count-count, n*count) for n in numbers]  #100 each unit will have 100 sentences (2 sentence per word)
+
+    for unit in units:
+        [id, start, end] = unit
+        name = f"{id}_iknow_sentences"
+        audio = table_randomized.slice(start, end).makeAudio("iknow 200 sentences", f"Part {id} of 10").compile()
+        audio.saveMp3(f"compiled/{name}.mp3").saveSrt(f"compiled/[jp]{name}.srt", combined=False, pickLanguage=1).saveSrt(f"compiled/[en]{name}.srt", combined=False, pickLanguage=2)
 
 
-#makeAudio(series_name='', title_name='')
-#Important for lyric to work. Lyric have to be titled with both of those name and pair mp3 lyric should have uniq combination of both
+def new_words_list(files_number, sentnece_number_per_file):
+    # files_number - how many files to generate, sentnece_number_per_file - how many sentences per file you want to have
+    
+    numbers = range(1, files_number+1)  #make list form 1 to 7 (7 unit blocs)
+    count = sentnece_number_per_file
+    units = [(n, n*count-count, n*count) for n in numbers]  #100 each unit will have 100 sentences (2 sentence per word)
+
+    for unit in units:
+        [id, start, end] = unit
+        name = f"{id}_iknow_new_sentences"
+        audio = table.slice(start, end).makeAudio("iknow 100 new sentences", f"Part {id} of 10").compile()
+        audio.saveMp3(f"compiled/{name}.mp3").saveSrt(f"compiled/[jp]{name}.srt", combined=False, pickLanguage=1).saveSrt(f"compiled/[en]{name}.srt", combined=False, pickLanguage=2)
 
 
-audio1 = table1.slice(0, 10).makeAudio()
-# .makeAudio("iKnow", "1.1_v2")
-# randomWordOrder().makeAudio("iKnow", "1.1")
-# audio2 = table1.randomWordOrder().makeAudio()
-# audio3 = table1.randomWordOrder().makeAudio()
 
-# audio1.addAudio(audio2)
-# audio1.addAudio(audio3)
+# randomized_list(10, 100)
+new_words_list(7, 100)
 
-# audio1.saveMp3("./iknow_v2.mp3")
-audio1.saveMp3(path="./iknow_v3")
+
+
+
+################################################################################################
+###############################      TESTING AREA      #########################################
+################################################################################################
+
+# BUG: I can't have englsih sub over spanish dialog bcouse there is arleady file fore english voice
+# TODO: try to add second language on second line of script. Such format: id, time --> time, first language, second language where comma in new line
+# TODO: make shifting subtitles e.g it will show up during silence gap or when next sentence is played
+# IDEA: each line of subtitle alongside the start, end, script will carry extra int with the number in milsec of gap. This gap information can be used to calculate shifting of time
+# TODO: make saveScript(filterLanguages:[2,4] to use with combined=True in order to combine multiple langugages or pick one so combined=True will be redundend)
+
+
+# test_name="test"
+# engjap = table.slice(1, 5).makeAudio("test_5_lines", f"test").compile().saveMp3(f"test/{test_name}.mp3").saveScript(f"test/[jp|en]{test_name}.txt", combined=True).saveSrt(path="test/[jp|en][src]test", combined=True)
+# english = table.slice(1, 5).makeAudio("test_5_lines", f"test").compile().saveScript(f"test/[en]{test_name}.txt", combined=False, pickLanguage=2).saveSrt(path="test/[en][src]test", combined=False, pickLanguage=2)
+# japanese = table.slice(1, 5).makeAudio("test_5_lines", f"test").compile().saveScript(f"test/[jp]{test_name}.txt", combined=False).saveSrt(path="test/[jp][src]test", combined=False)

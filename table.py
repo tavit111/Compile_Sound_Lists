@@ -23,6 +23,8 @@ class Table:
             for language in word:
                 print("\t", language)
             print("]")
+        
+        return type(self)(self.__table, self.__root, self.__is_anki_path)
 
     def filter(self, language_ids=[]):
         if not language_ids:
@@ -63,16 +65,19 @@ class Table:
         table = self.__table
         np.random.shuffle(table)
 
-        return type(self)(table, self.__root)
+        return type(self)(table, self.__root, self.__is_anki_path)
 
     def slice(self, start=0, end=-1):
         return type(self)(self.__table[start:end], self.__root, self.__is_anki_path)
     
     def __ankiToNormalPath(self, path):
+        if not path:
+            return ''
+
         match = re.search(r'\[sound:(.*?)\]', path)
         
         if not match:
-            raise ValueError("The input string does not contain a valid [sound:filename] pattern.")
+            raise ValueError(f'The input string "{path}" does not contain a valid [sound:filename] pattern.')
         
         return match.group(1)
 
@@ -83,33 +88,35 @@ class Table:
 
         wholeSegment = AudioSegment.empty()
         wholeScript = []
-        timestamp = 0
+        start_time = 0
         for word in self.__table:
             wordSegment = AudioSegment.empty()
-            word_script = ''
+            row_script = []
             for language in word:
                 script = language[1]
-
                 file_name = language[2]
+
                 if not script:
                     continue
                 
-                script = language[1]
-                word_script = script if not word_script else f"{word_script} {script}"
-                
+                # row_script = script if not row_script else f"{row_script} {script}"
+                row_script.append(script)
 
                 if self.__is_anki_path:
                     file_name = self.__ankiToNormalPath(file_name)
-
-                file_path = os.path.join(self.__root, file_name)
-   
-                languageSegmet = AudioSegment.from_mp3(file_path)
-                wordSegment = wordSegment + languageSegmet
-                wordSegment = wordSegment + language_silence
+                    
+                if file_name:
+                    file_path = os.path.join(self.__root, file_name)
+                    languageSegmet = AudioSegment.from_mp3(file_path)
+                    wordSegment = wordSegment + languageSegmet
+                    wordSegment = wordSegment + language_silence
 
             wholeSegment = wholeSegment + wordSegment
             wholeSegment = wholeSegment + word_silence
-            wholeScript.append((timestamp, word_script))
-            timestamp = len(wholeSegment)
+            # BUG: If I will table.filter([2]) and [2] is just script without file then every time will mesure 0.
+            # SOLVED: by adding pickLanguage in saveScript() and saveSrc. I can pick which language will be saved or use combined=True to have them all
+            end_time = len(wholeSegment)
+            wholeScript.append((start_time, end_time, *row_script))
+            start_time = end_time
 
         return Audio([(wholeSegment, wholeScript)], series_name, title_name)

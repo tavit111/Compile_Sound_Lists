@@ -159,7 +159,7 @@ def get_script_dir(root):
 
 
 def readCSV(path, headers=False):
-    delimiter = ","
+    delimiter = "\t"
     quotechar = "'"
 
     header = 0 if headers else None
