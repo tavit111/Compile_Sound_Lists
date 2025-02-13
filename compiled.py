@@ -103,7 +103,7 @@ class Compiled:
                 script = text[pickLanguage-1]
                 start_formated = self.__milisecondsToStrSrc(start_time)
                 end_formated = self.__milisecondsToStrSrc(end_time)
-                formated_line = f"{id}\n{start_formated} --> {end_formated}\n{script}\n\n"
+                formated_line = f"\n{id}\n{start_formated} --> {end_formated}\n{script}\n"
                 file.write(formated_line)
         
         print(f"SRC script saved succesfuly in {path}")

@@ -25,6 +25,9 @@ class Table:
             print("]")
         
         return type(self)(self.__table, self.__root, self.__is_anki_path)
+    
+    def length(self):
+        return len(self.__table)
 
     def filter(self, language_ids=[]):
         if not language_ids:

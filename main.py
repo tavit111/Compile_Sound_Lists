@@ -8,9 +8,6 @@ from playlist import Playlist
 # IDEA: make function to ignore column by index number
 
 
-
-
-
 table = Playlist.creatTable(
     root_path='/home/tavit/Code/Compile_Sound_Lists/media/iknow_sentences/',
     csv_file=f"/home/tavit/Code/Compile_Sound_Lists/media/1532_iknow.csv",
