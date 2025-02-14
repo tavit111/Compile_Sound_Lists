@@ -71,6 +71,8 @@ class Table:
         return type(self)(table, self.__root, self.__is_anki_path)
 
     def slice(self, start=0, end=-1):
+        start = start - 1
+        end = end - 1
         return type(self)(self.__table[start:end], self.__root, self.__is_anki_path)
     
     def __ankiToNormalPath(self, path):
