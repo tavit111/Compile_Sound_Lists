@@ -8,15 +8,21 @@ import math
 
 class Playlist:
     @classmethod
-    def creatTable(cls, root_path='', csv_file='', is_anki_path=False):
-        if csv_file:
+    def creatTable(cls, root_path='', csv_file='', num_arr=np.empty((1,1)), is_anki_path=False):
+        if num_arr.any():
+            return cls.__read_from_csv(num_arr, root_path, is_anki_path)
+        elif csv_file:
             return cls.__read_from_csv(csv_file, root_path, is_anki_path)
         elif root_path:
             return cls.__read_from_dir(root_path)
 
     @classmethod
     def __read_from_csv(cls, csv_file, root_path, is_anki_path):
-        data = readCSV(csv_file,  False)
+        
+        if isinstance(csv_file, np.ndarray):
+            data = csv_file
+        else:
+            data = readCSV(csv_file,  False)
 
         languages_count = len(data[0])/2
         # TODO: if language_count % 2 not 0 than add one column at the end
