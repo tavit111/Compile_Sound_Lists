@@ -21,7 +21,7 @@ def translate_iknow_sentence_list(strt=1, end=-1):
     """
     Read fron orginal source vocabularies.csv, slice the table (1 index), and traslate it into 3 columns (jp_sentence, jp_anki_path, en_sentence)
     pluse splice the secend example into one 3 column table
-    return dataframe of the table
+    return numpy array of the table
     """
 
     read_path = "/home/tavit/Shadowing/Sources/iknow_jp/vocabularies.csv"
