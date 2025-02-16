@@ -17,7 +17,7 @@ def make_sets(lenth, step):
 
 
 
-def translate_iknow_sentence_list(strt=1, end=-1):
+def translate_iknow_sentence_list(start=1, end=None):
     """
     Read fron orginal source vocabularies.csv, slice the table (1 index), and traslate it into 3 columns (jp_sentence, jp_anki_path, en_sentence)
     pluse splice the secend example into one 3 column table
@@ -25,12 +25,11 @@ def translate_iknow_sentence_list(strt=1, end=-1):
     """
 
     read_path = "/home/tavit/Shadowing/Sources/iknow_jp/vocabularies.csv"
-    start_row = strt - 1
-    end_row = end - 1
+    start = start - 1
     save_path = f"./{end}_iknow.csv"
 
     original_df = pd.read_csv(read_path, sep=',', quotechar="'")
-    df = original_df.iloc[start_row:end_row].copy()
+    df = original_df.iloc[start:end].copy()
 
     df['japanese'] = df.apply(lambda row: f"{row[11]}", axis=1)
     df['mp3_path'] = df.iloc[:, 15]  # Directly use the 4th column
@@ -53,7 +52,8 @@ def translate_iknow_sentence_list(strt=1, end=-1):
     df_filtered_by_sec_examp = df_combined.dropna(subset=[df_combined.columns[1]])
     df_removed_duplicats = df_filtered_by_sec_examp.drop_duplicates()
 
-    return df_removed_duplicats.to_numpy()
+    print(df_removed_duplicats.to_numpy())
+    # return df_removed_duplicats.to_numpy()
     # df_removed_duplicats.to_csv(save_path, index=False, header=False, sep='\t', quotechar="'")
 
     # print("New CSV file with the combined column and selected columns created successfully!")
@@ -68,7 +68,7 @@ def translate_assimil_split_by_lesson(surce_csv, start=1, end=None):
     start = start - 1
 
     source_df = pd.read_csv(surce_csv, sep=',', quotechar="'")
-    id_lesson = source_df.iloc[0:29, 0:2].copy()
+    id_lesson = source_df.iloc[:, 0:2].copy()
     
     id_lesson_no_duplicats = id_lesson.drop_duplicates(subset=["lesson"])
     first_lesson_ids = id_lesson_no_duplicats['id'].tolist()
@@ -83,3 +83,5 @@ def translate_assimil_split_by_lesson(surce_csv, start=1, end=None):
     tables_by_lessons = [translate_table.iloc[id[0]:id[1]+1, :].to_numpy() for id in lesson_ids]
         
     return tables_by_lessons[start:end]
+
+
