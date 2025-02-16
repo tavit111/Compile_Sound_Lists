@@ -58,3 +58,28 @@ def translate_iknow_sentence_list(strt=1, end=-1):
 
     # print("New CSV file with the combined column and selected columns created successfully!")
 
+def translate_assimil(source_df):
+    "transalte df of assimil csv lesson to 4 column format returns df"
+    table_df = source_df.iloc[:, 3:7].copy()
+    return table_df
+
+def translate_assimil_split_by_lesson(surce_csv, start=1, end=None):
+    """Rerun list of numpys tables seprated by lesson (can be fiter by range of lessons) and translated to 4 column format (phrase1, path1, phrase2, path2)"""
+    start = start - 1
+
+    source_df = pd.read_csv(surce_csv, sep=',', quotechar="'")
+    id_lesson = source_df.iloc[0:29, 0:2].copy()
+    
+    id_lesson_no_duplicats = id_lesson.drop_duplicates(subset=["lesson"])
+    first_lesson_ids = id_lesson_no_duplicats['id'].tolist()
+    first_indexes = [id-1 for id in first_lesson_ids]
+
+    id_lesson_no_duplicats = id_lesson.drop_duplicates(subset=["lesson"], keep='last')
+    last_lesson_ids = id_lesson_no_duplicats['id'].tolist()
+    last_indexes = [id-1 for id in last_lesson_ids]
+
+    lesson_ids = zip(first_indexes, last_indexes)
+    translate_table = translate_assimil(source_df)
+    tables_by_lessons = [translate_table.iloc[id[0]:id[1]+1, :].to_numpy() for id in lesson_ids]
+        
+    return tables_by_lessons[start:end]
