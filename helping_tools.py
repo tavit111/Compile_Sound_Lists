@@ -26,37 +26,21 @@ def translate_iknow_sentence_list(start=1, end=None):
 
     read_path = "/home/tavit/Shadowing/Sources/iknow_jp/vocabularies.csv"
     start = start - 1
-    save_path = f"./{end}_iknow.csv"
 
-    original_df = pd.read_csv(read_path, sep=',', quotechar="'")
-    df = original_df.iloc[start:end].copy()
+    df = pd.read_csv(read_path, sep=',', quotechar="'")
+    df_sliced = df.iloc[start:end]
 
-    df['japanese'] = df.apply(lambda row: f"{row[11]}", axis=1)
-    df['mp3_path'] = df.iloc[:, 15]  # Directly use the 4th column
-    df['english'] = df.apply(lambda row: f"{row[13]}", axis=1)
+    first_df = df_sliced.iloc[:, [11, 15, 13]].copy()
+    second_df = df_sliced.iloc[:, [17, 21, 19]].copy()
 
-    df['japanese2'] = df.apply(lambda row: f"{row[17]}", axis=1)
-    df['mp3_path2'] = df.iloc[:, 21]  # Directly use the 4th column
-    df['english2'] = df.apply(lambda row: f"{row[19]}", axis=1)
-
-
-    first_df = df[['japanese', 'mp3_path', 'english']].copy()
-    second_df = df[['japanese2', 'mp3_path2', 'english2']].copy()
-
+    first_df.columns = ['japanese', 'mp3_path', 'english']
     second_df.columns = ['japanese', 'mp3_path', 'english']
-
-    first_df.reset_index(drop=True, inplace=True)
-    second_df.reset_index(drop=True, inplace=True)
 
     df_combined = pd.concat([first_df, second_df], axis=0)
     df_filtered_by_sec_examp = df_combined.dropna(subset=[df_combined.columns[1]])
     df_removed_duplicats = df_filtered_by_sec_examp.drop_duplicates()
-
-    print(df_removed_duplicats.to_numpy())
-    # return df_removed_duplicats.to_numpy()
-    # df_removed_duplicats.to_csv(save_path, index=False, header=False, sep='\t', quotechar="'")
-
-    # print("New CSV file with the combined column and selected columns created successfully!")
+    
+    return df_removed_duplicats.to_numpy()
 
 def translate_assimil(source_df):
     "transalte df of assimil csv lesson to 4 column format returns df"
