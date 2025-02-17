@@ -71,8 +71,9 @@ class Table:
         return type(self)(table, self.__root, self.__is_anki_path)
 
     def slice(self, start=0, end=-1):
+        """Return new instance of Table with sliced table. Arguments are 1 index start and end at exac number"""
         start = start - 1
-        end = end - 1
+        
         return type(self)(self.__table[start:end], self.__root, self.__is_anki_path)
     
     def __ankiToNormalPath(self, path):

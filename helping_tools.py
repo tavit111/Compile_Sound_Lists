@@ -2,29 +2,27 @@ import pandas as pd
 
 def make_sets(lenth, step):
     """
-    Devide length of table / steps and calcualte ranges indexis (1 index) and id of files
-    return iterator of (id, start, end) format where id is file number, start is start index, end is end of index
+    Caclulate range (start, stop) of indexis to slice by given size. If ther is remeinder it will be on the last item.
+    return iterator of (id, start, end). Start and end are 1 indexed where they start and end at exac number.
     """
-    
+    # this function's return value gose mostly to Table.slie()
+
     start = 1
     end = lenth
 
     for (id, i) in enumerate(range(start, end + 1, step), start=1):
         if i + step - 1 > end:
-            yield (id, i, end + 1)
+            yield (id, i, end)
         else:
-            yield (id, i, i + step)
+            yield (id, i, i + step - 1)
 
 
-
-def translate_iknow_sentence_list(start=1, end=None):
+def translate_iknow_sentence_list(read_path, start=1, end=None):
     """
     Read fron orginal source vocabularies.csv, slice the table (1 index), and traslate it into 3 columns (jp_sentence, jp_anki_path, en_sentence)
     pluse splice the secend example into one 3 column table
     return numpy array of the table
     """
-
-    read_path = "/home/tavit/Shadowing/Sources/iknow_jp/vocabularies.csv"
     start = start - 1
 
     df = pd.read_csv(read_path, sep=',', quotechar="'")
