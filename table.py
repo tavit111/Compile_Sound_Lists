@@ -43,7 +43,13 @@ class Table:
         return type(self)(filtered_table, self.__root, self.__is_anki_path)
 
     def __filter_language_ids(self, word, ids):
-        return [language for language in word if language[0] in ids]
+        new_word = word.copy()
+
+        for language in new_word:
+            if language[0] not in ids:
+                language[2] = ''
+        
+        return new_word
 
     def repeatLanguages(self, repeat=0, no_repeat_first_lang=True):
         table = self.__table.repeat(repeat+1, 1)
@@ -105,7 +111,6 @@ class Table:
                 if not script:
                     continue
                 
-                # row_script = script if not row_script else f"{row_script} {script}"
                 row_script.append(script)
 
                 if self.__is_anki_path:
@@ -119,9 +124,8 @@ class Table:
 
             wholeSegment = wholeSegment + wordSegment
             wholeSegment = wholeSegment + word_silence
-            # BUG: If I will table.filter([2]) and [2] is just script without file then every time will mesure 0.
-            # SOLVED: by adding pickLanguage in saveScript() and saveSrc. I can pick which language will be saved or use combined=True to have them all
             end_time = len(wholeSegment)
+
             wholeScript.append((start_time, end_time, *row_script))
             start_time = end_time
 
