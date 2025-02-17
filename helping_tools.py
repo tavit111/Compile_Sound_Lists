@@ -48,7 +48,7 @@ def translate_assimil(source_df):
     return table_df
 
 def translate_assimil_split_by_lesson(surce_csv, start=1, end=None):
-    """Rerun list of numpys tables seprated by lesson (can be fiter by range of lessons) and translated to 4 column format (phrase1, path1, phrase2, path2)"""
+    """Rerun 2 lists: lesson number from the csv and numpy tables of each lesson in 4 column format"""
     start = start - 1
 
     source_df = pd.read_csv(surce_csv, sep=',', quotechar="'")
@@ -65,7 +65,7 @@ def translate_assimil_split_by_lesson(surce_csv, start=1, end=None):
     lesson_ids = zip(first_indexes, last_indexes)
     translate_table = translate_assimil(source_df)
     tables_by_lessons = [translate_table.iloc[id[0]:id[1]+1, :].to_numpy() for id in lesson_ids]
-        
-    return tables_by_lessons[start:end]
 
-
+    lesson_numbers = id_lesson_no_duplicats['lesson'].tolist()
+    
+    return lesson_numbers[start:end], tables_by_lessons[start:end]
