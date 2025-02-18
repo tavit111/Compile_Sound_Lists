@@ -1,10 +1,9 @@
-from dataclasses import dataclass
-import os
-from pydub import AudioSegment
-import numpy as np
 from audio import Audio
+from pydub import AudioSegment
+from dataclasses import dataclass
+import numpy as np
+import os
 import re
-import sys
 
 
 @dataclass
@@ -93,10 +92,8 @@ class Table:
         
         return match.group(1)
 
-
-    def makeAudio(self, languge_gap=2, word_gap=0, word_speed=1):
-        language_silence = AudioSegment.silent(duration=languge_gap * 1000)
-        word_silence = AudioSegment.silent(duration=word_gap * 1000)
+    def makeAudio(self, silcen_duration=2):
+        silenceSegment = AudioSegment.silent(duration=silcen_duration * 1000)
 
         wholeSegment = AudioSegment.empty()
         wholeScript = []
@@ -118,12 +115,12 @@ class Table:
                     
                 if file_name:
                     file_path = os.path.join(self.__root, file_name)
-                    languageSegmet = AudioSegment.from_mp3(file_path)
-                    wordSegment = wordSegment + languageSegmet
-                    wordSegment = wordSegment + language_silence
+                    languageSegment = AudioSegment.from_mp3(file_path)
+                    wordSegment = wordSegment + languageSegment
+                    wordSegment = wordSegment + silenceSegment
 
             wholeSegment = wholeSegment + wordSegment
-            wholeSegment = wholeSegment + word_silence
+            wholeSegment = wholeSegment + silenceSegment
             end_time = len(wholeSegment)
 
             wholeScript.append((start_time, end_time, *row_script))

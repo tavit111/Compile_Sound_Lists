@@ -1,9 +1,6 @@
 from dataclasses import dataclass, field
-import os
 from pydub import AudioSegment
-from pydub.playback import play
 from files import is_mp3_file
-from mutagen.id3 import ID3, SYLT, Encoding
 from compiled import Compiled
 
 
@@ -26,7 +23,7 @@ class Audio:
     def setMusicGap(self, gap):
         self.__music_gap = gap
 
-    def setMusicLoop(slef, isLooping):
+    def setMusicLoop(self, isLooping):
         self.__music_loop = isLooping
 
     def addEndPad(self, duration):
@@ -46,18 +43,15 @@ class Audio:
         return self.__vocabularySegments
 
     def __addScripts(self, scripts, previous_segment_len):
-        captions = []
         for (start_time, end_time, *script) in scripts:
             new_start = start_time + previous_segment_len
             new_end = end_time + previous_segment_len
             self.__captions.append((new_start, new_end, *script))
 
-    def __compile(self, repeat=0, randomize=False):
-        # segment is tuple (AudioSegment, list_of_caption)
+    def __compile(self):
         segments = self.__vocabularySegments
 
         allVocabularySegments = AudioSegment.empty()
-        list_of_captions = []
         silenceGap = AudioSegment.silent(
             duration=self.__vocabularySegment_gap*1000)
         previous_segment_len = 0
@@ -91,7 +85,6 @@ class Audio:
             allVocabularySegments = allVocabularySegments.overlay(
                 music, loop=self.__music_loop)
 
-        # return allVocabularySegments, list_of_captions
         return allVocabularySegments
 
     def addMusic(self, path):

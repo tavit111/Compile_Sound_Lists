@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 import os
 
 
-# TODO: Make suere the script is working on multilingual with all audio and multilingual but single audio multi captions
 @dataclass
 class Compiled:
     __audio_segments: [AudioSegment]

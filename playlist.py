@@ -1,9 +1,8 @@
-import os
+from table import Table
 from files import list_directories, extractMusicPath, list_mp3s, extract_transcript, zip_path_transcript, get_missing_contunity_of_numbered_files, get_script_dir, readCSV
 import numpy as np
-import random
-from table import Table
 import math
+import os
 
 
 class Playlist:
@@ -25,7 +24,6 @@ class Playlist:
             data = readCSV(csv_file,  False)
 
         languages_count = len(data[0])/2
-        # TODO: if language_count % 2 not 0 than add one column at the end
         if languages_count % 2 != 0:
             data = [[*row, ''] for row in data]
         
@@ -36,7 +34,6 @@ class Playlist:
 
         return Table(dataId, root_path, is_anki_path)
 
-    # TODO: Id system has to be added here
     @classmethod
     def __read_from_dir(cls, root_path):
         if not os.path.isdir(root_path):
@@ -67,7 +64,7 @@ class Playlist:
                 language.extend([['', ''] for i in range(diff)])
         swaped_languages = np.swapaxes(languages, 0, 1)
 
-        return Table(swaped_languages, root_path)
+        return Table(swaped_languages, root_path, False)
 
     @classmethod
     def __addIdsToLanguages(cls, data):
