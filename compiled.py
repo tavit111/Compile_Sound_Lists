@@ -9,16 +9,25 @@ import os
 class Compiled:
     __audio_segments: [AudioSegment]
     __captions:[(int, int, str)] = field(default_factory=list)
+    __artist_name: [str] = ''
+    __album_name: [str] = ''
+    __title_name: [str] = ''
 
     def saveMp3(self, path=''):
         if not path:
             path = os.getcwd() + '/list.mp3'
 
         audiosegment =  self.__audio_segments
-        
-        audiosegment.export(path, format='mp3')
-        print(f"Compilation saved succesfuly in {path}")
 
+        tags = {
+            "artist": self.__artist_name,
+            "album": self.__album_name,
+            "title": self.__title_name,
+        }
+        
+        audiosegment.export(path, format='mp3', tags=tags)
+        
+        print(f"Compilation saved succesfuly in {path}")
         return type(self)(self.__audio_segments, self.__captions)
 
 
@@ -27,24 +36,6 @@ class Compiled:
 
         audioSegment = self.__audio_segments()
         play(audioSegment[:limit])
-
-    # def __imbedLyric(self, mp3_file, langs=[]):
-    #     # TODO: Need multilangs adaptation
-    #     audio = ID3(mp3_file)
-    #     lyric = [(*text, time )for (time, *text) in self.__captions]
-
-    #     lyrics_frame = SYLT(encoding=Encoding.UTF8, lang='eng', format=2, type=1, text=lyric)
-    #     # lyrics_frame = SYLT(encoding=Encoding.UTF8, lang='eng', format=2, type=1, text=[])
-    #     # for timestamp, lyric in self.__captions:
-    #     #     lyrics_frame.text.append((lyric, timestamp))
-
-
-    #     audio.setall("SYLT", [SYLT(encoding=Encoding.UTF8, lang='eng', format=2, type=1, text=lyric)])
-    #     audio.save(v2_version=4)
-
-    #     # audio.add(lyrics_frame)
-    #     # audio.save()
-    #     print("Synchronized lyrics added successfully!")
 
 
     def __milisecondsToStr(self, time):
@@ -113,18 +104,4 @@ class Compiled:
     def showCaption(self):
         for start_time, end_time, capt in self.__captions:
             print(f"{start_time}\t{end_time}\t{capt}")
-
-
-# movie_dialog = [
-#     [0,3000, "Hello, how are you?"],
-#     [3000,7000, "I'm doing great, thank you!"],
-#     [7000,12000, "What are you up to today?"],
-#     [12000,17000, "Just relaxing, watching a movie."],
-#     [17000, 23000, "Sounds like a good plan!"]
-# ]
-# empty_audio = AudioSegment.silent(duration=5000)
-# test = Compiled(empty_audio, movie_dialog)
-# test.saveSrc(path="./[src]script")
-
-        
-        
+   

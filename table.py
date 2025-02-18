@@ -94,7 +94,7 @@ class Table:
         return match.group(1)
 
 
-    def makeAudio(self, series_name='', title_name='', languge_gap=2, word_gap=0, word_speed=1):
+    def makeAudio(self, languge_gap=2, word_gap=0, word_speed=1):
         language_silence = AudioSegment.silent(duration=languge_gap * 1000)
         word_silence = AudioSegment.silent(duration=word_gap * 1000)
 
@@ -129,4 +129,4 @@ class Table:
             wholeScript.append((start_time, end_time, *row_script))
             start_time = end_time
 
-        return Audio([(wholeSegment, wholeScript)], series_name, title_name)
+        return Audio([(wholeSegment, wholeScript)])

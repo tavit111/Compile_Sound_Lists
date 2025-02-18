@@ -1,9 +1,3 @@
-/media
+/archives
 /__pycache__
-/test
-/compiled
-notes
-example
 .directory
-assimil_spanish.py
-iknow_sentence_list.py

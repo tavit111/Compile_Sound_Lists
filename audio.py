@@ -11,8 +11,6 @@ from compiled import Compiled
 @dataclass
 class Audio:
     __vocabularySegments: [AudioSegment]
-    __series_name: [str] = ''
-    __title_name: [str] = ''
     __music_files: [str] = field(default_factory=list)
     __captions:[(int, int, str)] = field(default_factory=list)
     __vocabularySegment_gap: int = 2
@@ -54,7 +52,6 @@ class Audio:
             new_end = end_time + previous_segment_len
             self.__captions.append((new_start, new_end, *script))
 
-# TODO: make compilation return new object
     def __compile(self, repeat=0, randomize=False):
         # segment is tuple (AudioSegment, list_of_caption)
         segments = self.__vocabularySegments
@@ -103,7 +100,7 @@ class Audio:
 
         self.__music_files.append(path)
 
-    def compile(self):
+    def compile(self, artist_name='', album_name='', title_name=''):
         audiosegment = self.__compile()
         
-        return Compiled(audiosegment, self.__captions)
+        return Compiled(audiosegment, self.__captions,  artist_name, album_name, title_name)
