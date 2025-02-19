@@ -1,6 +1,7 @@
 from pydub import AudioSegment
 from pydub.playback import play
 from dataclasses import dataclass, field
+from files import loadCoverArt
 import os
 
 
@@ -11,6 +12,7 @@ class Compiled:
     __artist_name: [str] = ''
     __album_name: [str] = ''
     __title_name: [str] = ''
+    __conver_art: [str] = ''
 
     def saveMp3(self, path=''):
         if not path:
@@ -25,6 +27,9 @@ class Compiled:
         }
         
         audiosegment.export(path, format='mp3', tags=tags)
+
+        if self.__conver_art:
+            loadCoverArt(path, self.__conver_art)
         
         print(f"Compilation saved succesfuly in {path}")
         return type(self)(self.__audio_segments, self.__captions)

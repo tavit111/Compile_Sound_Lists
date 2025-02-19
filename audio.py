@@ -93,7 +93,7 @@ class Audio:
 
         self.__music_files.append(path)
 
-    def compile(self, artist_name='', album_name='', title_name=''):
+    def compile(self, artist_name='', album_name='', title_name='', cover_art=''):
         audiosegment = self.__compile()
         
-        return Compiled(audiosegment, self.__captions,  artist_name, album_name, title_name)
+        return Compiled(audiosegment, self.__captions,  artist_name, album_name, title_name, cover_art)

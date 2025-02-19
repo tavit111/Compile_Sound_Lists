@@ -4,6 +4,8 @@ from pathlib import Path
 from itertools import repeat
 import csv
 import pandas as pd
+from mutagen.mp3 import MP3
+from mutagen.id3 import ID3, APIC, error
 
 dialect = csv.unix_dialect()
 dialect.delimiter = ","
@@ -169,6 +171,26 @@ def readCSV(path, headers=False):
 
     return df.to_numpy()
 
+def loadCoverArt(mp3_path, coverart_path):
+    audio_file = MP3(mp3_path, ID3=ID3)
 
-if __name__ == "__main__":
-    readCSV("/home/tavit/Code/Compile_Sound_Lists/media/fiszki-root/transcript.csv")
+    with open(coverart_path, 'rb') as img_file:
+        img_data = img_file.read()
+    
+    if coverart_path.lower().endswith('.png'):
+        mime_type = 'image/png'
+    else:
+        mime_type = 'image/jpeg'
+    
+    audio_file.tags.add(
+        APIC(
+            encoding=3,
+            mime=mime_type,
+            type=3,
+            desc='Cover',
+            data=img_data
+        )
+    )
+
+    audio_file.save()
+    
