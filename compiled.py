@@ -3,6 +3,8 @@ from pydub.playback import play
 from dataclasses import dataclass, field
 from files import loadCoverArt
 import os
+import numpy as np
+from moviepy import ImageClip, ColorClip, CompositeVideoClip, AudioArrayClip
 
 
 @dataclass
@@ -12,7 +14,7 @@ class Compiled:
     __artist_name: [str] = ''
     __album_name: [str] = ''
     __title_name: [str] = ''
-    __conver_art: [str] = ''
+    __cover_art: [str] = ''
 
     def saveMp3(self, path=''):
         if not path:
@@ -28,11 +30,11 @@ class Compiled:
         
         audiosegment.export(path, format='mp3', tags=tags)
 
-        if self.__conver_art:
-            loadCoverArt(path, self.__conver_art)
+        if self.__cover_art:
+            loadCoverArt(path, self.__cover_art)
         
         print(f"Compilation saved succesfuly in {path}")
-        return type(self)(self.__audio_segments, self.__captions)
+        return type(self)(self.__audio_segments, self.__captions, self.__artist_name, self.__album_name, self.__title_name, self.__cover_art)
 
 
     def play(self, limit=-1):
@@ -85,7 +87,8 @@ class Compiled:
 
         self.__saveScript(captions=captions, path=path, pickLanguage=pickLanguage)
 
-        return type(self)(self.__audio_segments, self.__captions)
+        return type(self)(self.__audio_segments, self.__captions, self.__artist_name, self.__album_name, self.__title_name, self.__cover_art)
+
     
     def saveSrt(self, path='', combined=False, pickLanguage=1):
         captions = self.__captions
@@ -102,10 +105,41 @@ class Compiled:
                 file.write(formated_line)
         
         print(f"SRC script saved succesfuly in {path}")
-        return type(self)(self.__audio_segments, self.__captions)
+        return type(self)(self.__audio_segments, self.__captions, self.__artist_name, self.__album_name, self.__title_name, self.__cover_art)
 
 
     def showCaption(self):
         for start_time, end_time, capt in self.__captions:
             print(f"{start_time}\t{end_time}\t{capt}")
-   
+    
+    def saveMp4(self, path, use_cover=True):
+        audio_clip = self.__get_audio_clip()
+        audio_duration = audio_clip.duration
+
+        if use_cover and self.__cover_art:
+            image_clip = ImageClip(self.__cover_art)
+        else:
+            image_clip = ColorClip(size=(640, 360) ,color=(0, 0, 0))
+        image_clip = image_clip.with_duration(audio_duration)
+        image_clip = image_clip.with_audio(audio_clip)
+
+        final_clip = CompositeVideoClip([image_clip])
+        final_clip = final_clip.with_duration(audio_duration)
+        final_clip.write_videofile(path, fps=24, codec='libx264', audio_codec='aac')
+
+        print(f"SRC script saved succesfuly in {path}")
+        return type(self)(self.__audio_segments, self.__captions, self.__artist_name, self.__album_name, self.__title_name, self.__cover_art)
+
+    def __get_audio_clip(self):
+        audio = self.__audio_segments
+        raw_samples = audio.get_array_of_samples()
+        samples_np = np.array(raw_samples)
+        samples_float = samples_np.astype(np.float32) / (2**(8 * audio.sample_width - 1))
+
+        if audio.channels == 2:
+            samples_float = samples_float.reshape((-1, 2))
+        else:
+            samples_float = samples_float.reshape((-1, 1)).repeat(2, axis=1)
+
+        sample_rate = audio.frame_rate
+        return AudioArrayClip(samples_float, sample_rate)
