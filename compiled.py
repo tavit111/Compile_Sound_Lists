@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from files import loadCoverArt
 import os
 import numpy as np
-from moviepy import ImageClip, ColorClip, CompositeVideoClip, AudioArrayClip
+from moviepy import ImageClip, ColorClip, CompositeVideoClip, AudioArrayClip, TextClip
 
 
 @dataclass
@@ -109,21 +109,31 @@ class Compiled:
 
 
     def showCaption(self):
-        for start_time, end_time, capt in self.__captions:
-            print(f"{start_time}\t{end_time}\t{capt}")
+        for (start_time, end_time, *text) in self.__captions:
+            print(f"{start_time}\t{end_time}\t{text}")
     
-    def saveMp4(self, path, use_cover=True):
+    def saveMp4(self, path, cover_art='', font="NotoSansCJK-Regular.ttc"):
+        width = 1280
+        higth = 720
         audio_clip = self.__get_audio_clip()
         audio_duration = audio_clip.duration
 
-        if use_cover and self.__cover_art:
-            image_clip = ImageClip(self.__cover_art)
+        if cover_art:
+            image_clip = ImageClip(cover_art)
         else:
-            image_clip = ColorClip(size=(640, 360) ,color=(0, 0, 0))
+            image_clip = ColorClip(size=(width, higth) ,color=(0, 0, 0))
         image_clip = image_clip.with_duration(audio_duration)
         image_clip = image_clip.with_audio(audio_clip)
 
-        final_clip = CompositeVideoClip([image_clip])
+        def create_textClip(text, start, end):
+            start_mil = self.__milisecondsToStrSrc(start)
+            end_mil = self.__milisecondsToStrSrc(end)
+            return TextClip(text=text, font=font, method="caption", font_size=36, size=(width, None),  color="white", bg_color="black", margin=(None, 23)).with_start(start_mil).with_end(end_mil)
+
+        txt_clips_l1 = [create_textClip(text[0], start, end).with_position(('center', 'bottom'), relative=True) for (start, end, *text) in self.__captions]
+        txt_clips_l2 = [create_textClip(text[1], start, end).with_position(('center', 'top'), relative=True) for (start, end, *text) in self.__captions]
+        
+        final_clip = CompositeVideoClip([image_clip] + txt_clips_l1 + txt_clips_l2, size=(width, higth))
         final_clip = final_clip.with_duration(audio_duration)
         final_clip.write_videofile(path, fps=24, codec='libx264', audio_codec='aac')
 
