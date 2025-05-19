@@ -27,12 +27,12 @@ class Compiled:
             "album": self.__album_name,
             "title": self.__title_name,
         }
-        
+
         audiosegment.export(path, format='mp3', tags=tags)
 
         if self.__cover_art:
             loadCoverArt(path, self.__cover_art)
-        
+
         print(f"Compilation saved succesfuly in {path}")
         return type(self)(self.__audio_segments, self.__captions, self.__artist_name, self.__album_name, self.__title_name, self.__cover_art)
 
@@ -46,10 +46,10 @@ class Compiled:
 
     def __milisecondsToStr(self, time):
         total_seconds = time // 1000
-        
+
         minutes, seconds = divmod(total_seconds, 60)
         hours, minutes = divmod(minutes, 60)
-        
+
         if hours > 0:
             return f"{hours:d}:{minutes:02d}:{seconds:02d}"
         else:
@@ -59,8 +59,20 @@ class Compiled:
         total_seconds, milliseconds = divmod(time, 1000)
         minutes, seconds = divmod(total_seconds, 60)
         hours, minutes = divmod(minutes, 60)
-        
+
         return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
+
+    def __milidecondsToStrLrc(self, time):
+        total_seconds, milliseconds = divmod(time, 1000)
+        minutes, seconds = divmod(total_seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+
+        if hours > 0:
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:02d}"
+        else:
+            return f"{minutes:02d}:{seconds:02d}.{milliseconds:02d}"
+
+
 
     def __combineScripts(self, captions):
         return [(start_time, end_time, f"{' '.join(line)}") for (start_time, end_time, *line) in captions]
@@ -70,15 +82,15 @@ class Compiled:
         if not path:
             lang = '' if not lang else f"_{lang}"
             path = os.getcwd() + f"/script{lang}.txt"
-        
+
         with open(path, 'w') as file:
             for (start, end, *text) in captions:
                 timeStr = self.__milisecondsToStr(start)
                 text = text[pickLanguage-1]
                 file.write(f"{timeStr}\t{text}\n")
-        
+
         print(f"Script saved succesfuly in {path}")
-    
+
     def saveScript(self, path='', combined=False, pickLanguage=1):
         captions = self.__captions
 
@@ -89,7 +101,7 @@ class Compiled:
 
         return type(self)(self.__audio_segments, self.__captions, self.__artist_name, self.__album_name, self.__title_name, self.__cover_art)
 
-    
+
     def saveSrt(self, path='', combined=False, pickLanguage=1):
         captions = self.__captions
 
@@ -103,15 +115,34 @@ class Compiled:
                 end_formated = self.__milisecondsToStrSrc(end_time)
                 formated_line = f"\n{id}\n{start_formated} --> {end_formated}\n{script}\n"
                 file.write(formated_line)
-        
+
         print(f"SRC script saved succesfuly in {path}")
+        return type(self)(self.__audio_segments, self.__captions, self.__artist_name, self.__album_name, self.__title_name, self.__cover_art)
+
+    def saveLrc(self, path='', combined=False, pickLanguage=1, metaData=False):
+        captions = self.__captions
+
+        if combined:
+            captions = self.__combineScripts(captions)
+
+        with open(path, 'w', encoding='utf-8') as file:
+            if metaData:
+                formatedMeta = f"[ar:{self.__artist_name}]\n[ti:{self.__title_name}]\n\n"
+                file.write(formatedMeta)
+            for id, (start_time, end_time, *text) in enumerate(captions, start=1):
+                script = text[pickLanguage-1]
+                start_formated = self.__milidecondsToStrLrc(start_time)
+                formated_line = f"[{start_formated}]{script}\n"
+                file.write(formated_line)
+
+        print(f"Lrc script saved succesfuly in {path}")
         return type(self)(self.__audio_segments, self.__captions, self.__artist_name, self.__album_name, self.__title_name, self.__cover_art)
 
 
     def showCaption(self):
         for (start_time, end_time, *text) in self.__captions:
             print(f"{start_time}\t{end_time}\t{text}")
-    
+
     def saveMp4(self, path, cover_art='', font="NotoSansCJK-Regular.ttc"):
         width = 1280
         higth = 720
@@ -132,7 +163,7 @@ class Compiled:
 
         txt_clips_l1 = [create_textClip(text[0], start, end).with_position(('center', 'bottom'), relative=True) for (start, end, *text) in self.__captions]
         txt_clips_l2 = [create_textClip(text[1], start, end).with_position(('center', 'top'), relative=True) for (start, end, *text) in self.__captions]
-        
+
         final_clip = CompositeVideoClip([image_clip] + txt_clips_l1 + txt_clips_l2, size=(width, higth))
         final_clip = final_clip.with_duration(audio_duration)
         final_clip.write_videofile(path, fps=24, codec='libx264', audio_codec='aac')
